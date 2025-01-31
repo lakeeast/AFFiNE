@@ -24,20 +24,7 @@ export const ShareMenuContent = (props: ShareMenuProps) => {
   const t = useI18n();
   return (
     <div className={styles.containerStyle}>
-      <Tabs.Root defaultValue="share">
-        <Tabs.List>
-          <Tabs.Trigger value="share">
-            {t['com.affine.share-menu.shareButton']()}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="export">{t['Export']()}</Tabs.Trigger>
-        </Tabs.List>
-        <Tabs.Content value="share">
-          <SharePage {...props} />
-        </Tabs.Content>
-        <Tabs.Content value="export">
-          <ShareExport />
-        </Tabs.Content>
-      </Tabs.Root>
+      <ShareExport />
     </div>
   );
 };
