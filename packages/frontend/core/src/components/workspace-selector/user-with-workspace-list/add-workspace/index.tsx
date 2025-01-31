@@ -21,32 +21,6 @@ export const AddWorkspace = ({
 
   return (
     <div>
-      {BUILD_CONFIG.isElectron && (
-        <MenuItem
-          block={true}
-          prefixIcon={<ImportIcon />}
-          onClick={onAddWorkspace}
-          data-testid="add-workspace"
-          className={styles.ItemContainer}
-        >
-          <div className={styles.ItemText}>
-            {t['com.affine.workspace.local.import']()}
-          </div>
-        </MenuItem>
-      )}
-      <MenuItem
-        block={true}
-        prefixIcon={<PlusIcon />}
-        onClick={onNewWorkspace}
-        data-testid="new-workspace"
-        className={styles.ItemContainer}
-      >
-        <div className={styles.ItemText}>
-          {enableLocalWorkspace
-            ? t['com.affine.workspaceList.addWorkspace.create']()
-            : t['com.affine.workspaceList.addWorkspace.create-cloud']()}
-        </div>
-      </MenuItem>
     </div>
   );
 };

@@ -120,10 +120,6 @@ const UserWithWorkspaceListInner = ({
         onClickWorkspace={onClickWorkspace}
         showEnableCloudButton={showEnableCloudButton}
       />
-      <AddWorkspace
-        onAddWorkspace={onAddWorkspace}
-        onNewWorkspace={onNewWorkspace}
-      />
       <AddServer onAddServer={onAddServer} />
     </div>
   );

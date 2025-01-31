@@ -37,12 +37,7 @@ import { UnknownUserIcon } from './unknow-user';
 
 export const UserInfo = () => {
   const session = useService(AuthService).session;
-  const account = useLiveData(session.account$);
-  return account ? (
-    <AuthorizedUserInfo account={account} />
-  ) : (
-    <UnauthorizedUserInfo />
-  );
+  return <div/>
 };
 
 const menuContentOptions: MenuProps['contentOptions'] = {

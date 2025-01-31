@@ -257,18 +257,6 @@ const WorkspaceSelector = ({
         </div>
       )}
       <Divider size="thinner" />
-
-      <MenuItem
-        className={styles.createWorkspaceItem}
-        prefix={<NewPageIcon className={styles.itemIcon} fontSize={28} />}
-        onClick={onClickCreateWorkspace}
-      >
-        <div className={styles.itemContent}>
-          {t[
-            'com.affine.upgrade-to-team-page.workspace-selector.create-workspace'
-          ]()}
-        </div>
-      </MenuItem>
     </div>
   );
 };

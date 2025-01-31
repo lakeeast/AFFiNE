@@ -117,60 +117,11 @@ const CloudWorkSpaceList = ({
 
   return (
     <div className={styles.workspaceListWrapper}>
-      <div className={styles.workspaceServer}>
-        <div className={styles.workspaceServerContent}>
-          <div className={styles.workspaceServerName}>
-            {serverType === ServerDeploymentType.Affine ? (
-              <CloudWorkspaceIcon className={styles.workspaceTypeIcon} />
-            ) : (
-              <TeamWorkspaceIcon className={styles.workspaceTypeIcon} />
-            )}
-            <div className={styles.account}>{serverName}</div>
-          </div>
-          <div className={styles.account}>
-            {account ? account.email : 'Not signed in'}
-          </div>
-        </div>
-
-        <Menu
-          items={[
-            server.id !== 'affine-cloud' && (
-              <MenuItem key="delete-server" onClick={handleDeleteServer}>
-                {t['com.affine.server.delete']()}
-              </MenuItem>
-            ),
-            accountStatus === 'authenticated' && (
-              <MenuItem key="sign-out" onClick={handleSignOut}>
-                {t['Sign out']()}
-              </MenuItem>
-            ),
-            accountStatus === 'unauthenticated' && (
-              <MenuItem key="sign-in" onClick={handleSignIn}>
-                {t['Sign in']()}
-              </MenuItem>
-            ),
-          ]}
-        >
-          <div>
-            <IconButton icon={<MoreHorizontalIcon />} />
-          </div>
-        </Menu>
-      </div>
       <WorkspaceList
         items={workspaces}
         onClick={onClickWorkspace}
         onEnableCloudClick={onClickEnableCloud}
       />
-      <MenuItem
-        block={true}
-        prefixIcon={<PlusIcon />}
-        onClick={onNewWorkspace}
-        className={styles.ItemContainer}
-      >
-        <div className={styles.ItemText}>
-          {t['com.affine.workspaceList.addWorkspace.create']()}
-        </div>
-      </MenuItem>
     </div>
   );
 };
@@ -197,13 +148,6 @@ const LocalWorkspaces = ({
           {t['com.affine.workspaceList.workspaceListType.local']()}
         </div>
       </div>
-      <WorkspaceList
-        items={workspaces}
-        onClick={onClickWorkspace}
-        onSettingClick={onClickWorkspaceSetting}
-        onEnableCloudClick={onClickEnableCloud}
-      />
-      <Divider size="thinner" />
     </div>
   );
 };

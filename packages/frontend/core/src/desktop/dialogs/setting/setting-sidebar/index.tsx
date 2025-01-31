@@ -211,7 +211,7 @@ export const SettingSidebar = ({
         {t['com.affine.settingSidebar.title']()}
       </div>
 
-      {loginStatus === 'unauthenticated' ? <SignInButton /> : null}
+      {loginStatus === 'unauthenticated' ? null : null}
       {loginStatus === 'authenticated' ? (
         <Suspense>
           <UserInfo

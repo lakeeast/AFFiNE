@@ -290,7 +290,6 @@ const DetailPageImpl = memo(function DetailPageImpl() {
         >
           {/* Add a key to force rerender when page changed, to avoid error boundary persisting. */}
           <AffineErrorBoundary key={doc.id}>
-            <TopTip pageId={doc.id} workspace={workspace} />
             <Scrollable.Root>
               <Scrollable.Viewport
                 onScroll={handleScroll}

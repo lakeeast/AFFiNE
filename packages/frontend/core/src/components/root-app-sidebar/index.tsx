@@ -197,7 +197,7 @@ export const RootAppSidebar = memo((): ReactElement => {
         </CollapsibleSection>
       </SidebarScrollableContainer>
       <SidebarContainer>
-        {BUILD_CONFIG.isElectron ? <UpdaterButton /> : <AppDownloadButton />}
+        {BUILD_CONFIG.isElectron ? <UpdaterButton /> : <div/>}
       </SidebarContainer>
     </AppSidebar>
   );
