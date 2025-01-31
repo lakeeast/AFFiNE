@@ -25,7 +25,6 @@ const MobileSetting = () => {
       <UserProfile />
       <UserUsage />
       <AppearanceGroup />
-      <AboutGroup />
       <ExperimentalFeatureSetting />
       <OthersGroup />
     </div>

@@ -104,18 +104,6 @@ export const AppearanceSettings = () => {
         {enableThemeEditor ? <ThemeEditorSetting /> : null}
       </SettingWrapper>
 
-      {BUILD_CONFIG.isWeb && !environment.isMobile ? (
-        <SettingWrapper title={t['com.affine.setting.appearance.links']()}>
-          <SettingRow
-            name={t['com.affine.setting.appearance.open-in-app']()}
-            desc={t['com.affine.setting.appearance.open-in-app.hint']()}
-            data-testid="open-in-app-links-trigger"
-          >
-            <OpenInAppLinksMenu />
-          </SettingRow>
-        </SettingWrapper>
-      ) : null}
-
       {BUILD_CONFIG.isElectron ? (
         <SettingWrapper
           title={t['com.affine.appearanceSettings.sidebar.title']()}

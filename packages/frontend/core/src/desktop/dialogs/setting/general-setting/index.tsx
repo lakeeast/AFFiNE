@@ -60,13 +60,7 @@ export const useGeneralSettingList = (): GeneralSettingList => {
       title: t['com.affine.keyboardShortcuts.title'](),
       icon: <KeyboardIcon />,
       testId: 'shortcuts-panel-trigger',
-    },
-    {
-      key: 'about',
-      title: t['com.affine.aboutAFFiNE.title'](),
-      icon: <InformationIcon />,
-      testId: 'about-panel-trigger',
-    },
+    }
   ];
   if (enableEditorSettings) {
     // add editor settings to second position
