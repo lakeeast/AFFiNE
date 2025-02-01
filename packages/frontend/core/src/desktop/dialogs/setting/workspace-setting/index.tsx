@@ -70,12 +70,6 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
         icon: <PropertyIcon />,
         testId: 'workspace-setting:properties',
       },
-      {
-        key: 'workspace:storage',
-        title: t['Storage'](),
-        icon: <SaveIcon />,
-        testId: 'workspace-setting:storage',
-      },
       showBilling && {
         key: 'workspace:billing' as SettingTab,
         title: t['com.affine.settings.workspace.billing'](),
