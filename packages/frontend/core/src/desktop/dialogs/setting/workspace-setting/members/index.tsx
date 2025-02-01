@@ -49,7 +49,6 @@ const MembersPanelLocal = ({
           </SettingRow>
         </div>
       </Tooltip>
-      <EnableCloudPanel onCloseSetting={onCloseSetting} />
     </div>
   );
 };

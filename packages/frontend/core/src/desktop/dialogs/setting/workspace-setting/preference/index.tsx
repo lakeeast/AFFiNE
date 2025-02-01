@@ -44,9 +44,6 @@ export const WorkspaceSettingDetail = ({
         >
           <ProfilePanel />
           <LabelsPanel />
-          {workspace.flavour === 'local' && (
-            <EnableCloudPanel onCloseSetting={onCloseSetting} />
-          )}
         </SettingRow>
       </SettingWrapper>
       <TemplateDocSetting />

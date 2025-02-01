@@ -72,23 +72,6 @@ export const useGeneralSettingList = (): GeneralSettingList => {
     });
   }
 
-  if (hasPaymentFeature) {
-    settings.splice(3, 0, {
-      key: 'plans',
-      title: t['com.affine.payment.title'](),
-      icon: <UpgradeIcon />,
-      testId: 'plans-panel-trigger',
-    });
-    if (status === 'authenticated') {
-      settings.splice(3, 0, {
-        key: 'billing',
-        title: t['com.affine.payment.billing-setting.title'](),
-        icon: <PaymentIcon />,
-        testId: 'billing-panel-trigger',
-      });
-    }
-  }
-
   if (BUILD_CONFIG.isElectron) {
     settings.push({
       key: 'backup',

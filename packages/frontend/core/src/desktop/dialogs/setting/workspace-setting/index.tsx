@@ -71,12 +71,6 @@ export const useWorkspaceSettingList = (): SettingSidebarItem[] => {
         testId: 'workspace-setting:properties',
       },
       {
-        key: 'workspace:members',
-        title: t['Members'](),
-        icon: <CollaborationIcon />,
-        testId: 'workspace-setting:members',
-      },
-      {
         key: 'workspace:storage',
         title: t['Storage'](),
         icon: <SaveIcon />,
