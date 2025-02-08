@@ -29,7 +29,7 @@ const useDismiss = (key: AIOnboardingType) => {
 export const WorkspaceAIOnboarding = () => {
   const [dismissLocal] = useDismiss(AIOnboardingType.LOCAL);
   const featureFlagService = useService(FeatureFlagService);
-  const enableAI = featureFlagService.flags.enable_ai.value;
+  const enableAI = false; // featureFlagService.flags.enable_ai.value;
 
   return (
     <Suspense>
