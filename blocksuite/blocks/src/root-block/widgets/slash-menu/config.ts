@@ -297,7 +297,7 @@ export const defaultSlashMenuConfig: SlashMenuConfig = {
       icon: ImageIcon20,
       tooltip: slashMenuToolTips['Dicom'],
       showWhen: ({ model }) =>
-        model.doc.schema.flavourSchemaMap.has('affine:image'),
+        model.doc.schema.flavourSchemaMap.has('affine:dicom'),
       action: async ({ rootComponent }) => {
         const [success, ctx] = rootComponent.std.command
           .chain()
