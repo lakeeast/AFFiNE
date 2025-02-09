@@ -4,9 +4,9 @@ import type { BlockModel } from '@blocksuite/store';
 import { getSelectedBlocksCommand } from '../block-crud/get-selected-blocks';
 import {
   getBlockSelectionsCommand,
+  getDicomSelectionsCommand,
   getImageSelectionsCommand,
-  getTextSelectionCommand,
-} from '../selection';
+  getTextSelectionCommand} from '../selection';
 
 /**
  * Retrieves the selected models based on the provided selection types and mode.
@@ -37,14 +37,14 @@ import {
  */
 export const getSelectedModelsCommand: Command<
   {
-    types?: Array<'image' | 'text' | 'block'>;
+    types?: Array<'image' | 'text' | 'block' | 'dicom'>;
     mode?: 'all' | 'flat' | 'highest';
   },
   {
     selectedModels: BlockModel[];
   }
 > = (ctx, next) => {
-  const types = ctx.types ?? ['block', 'text', 'image'];
+  const types = ctx.types ?? ['block', 'text', 'image', 'dicom'];
   const mode = ctx.mode ?? 'flat';
   const selectedModels: BlockModel[] = [];
   ctx.std.command
@@ -53,6 +53,7 @@ export const getSelectedModelsCommand: Command<
       chain.pipe(getTextSelectionCommand),
       chain.pipe(getBlockSelectionsCommand),
       chain.pipe(getImageSelectionsCommand),
+      chain.pipe(getDicomSelectionsCommand),
     ])
     .pipe(getSelectedBlocksCommand, { types, mode })
     .pipe(ctx => {

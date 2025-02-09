@@ -17,7 +17,7 @@ export const getSelectedBlocksCommand: Command<
     blockSelections?: BlockSelection[];
     imageSelections?: ImageSelection[];
     filter?: (el: BlockComponent) => boolean;
-    types?: Array<'image' | 'text' | 'block'>;
+    types?: Array<'image' | 'text' | 'block' | 'dicom'>;
     roles?: RoleType[];
     mode?: 'all' | 'flat' | 'highest';
   },
@@ -26,7 +26,7 @@ export const getSelectedBlocksCommand: Command<
   }
 > = (ctx, next) => {
   const {
-    types = ['block', 'text', 'image'],
+    types = ['block', 'text', 'image', 'dicom'],
     roles = ['content'],
     mode = 'flat',
   } = ctx;
