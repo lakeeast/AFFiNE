@@ -27,6 +27,7 @@ import { NewDocTooltip } from './new-doc.js';
 import { NowTooltip } from './now.js';
 import { NumberedListTooltip } from './numbered-list.js';
 import { PhotoTooltip } from './photo.js';
+import { DicomTooltip } from './dicom.js';
 import { QuoteTooltip } from './quote.js';
 import { StrikethroughTooltip } from './strikethrough.js';
 import { TableViewTooltip } from './table-view.js';
@@ -163,6 +164,11 @@ export const slashMenuToolTips: Record<string, SlashMenuTooltip> = {
   Image: {
     figure: PhotoTooltip,
     caption: 'Photo',
+  },
+
+  Dicom: {
+    figure: DicomTooltip,
+    caption: 'DICOM',
   },
 
   'X (Twitter)': {

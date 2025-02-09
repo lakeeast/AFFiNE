@@ -292,6 +292,23 @@ export const defaultSlashMenuConfig: SlashMenuConfig = {
       },
     },
     {
+      name: 'Dicom',
+      description: 'Insert Dicoms.',
+      icon: ImageIcon20,
+      tooltip: slashMenuToolTips['Image'],
+      showWhen: ({ model }) =>
+        model.doc.schema.flavourSchemaMap.has('affine:image'),
+      action: async ({ rootComponent }) => {
+        const [success, ctx] = rootComponent.std.command
+          .chain()
+          .pipe(getSelectedModelsCommand)
+          .pipe(insertImagesCommand, { removeEmptyLine: true })
+          .run();
+
+        if (success) await ctx.insertedImageIds;
+      },
+    },
+    {
       name: 'Link',
       description: 'Add a bookmark for reference.',
       icon: LinkIcon,
