@@ -296,16 +296,26 @@ export const defaultSlashMenuConfig: SlashMenuConfig = {
       description: 'Insert Dicoms.',
       icon: ImageIcon20,
       tooltip: slashMenuToolTips['Dicom'],
+      alias: ['dicom'],
       showWhen: ({ model }) =>
         model.doc.schema.flavourSchemaMap.has('affine:dicom'),
-      action: async ({ rootComponent }) => {
-        const [success, ctx] = rootComponent.std.command
-          .chain()
-          .pipe(getSelectedModelsCommand)
-          .pipe(insertImagesCommand, { removeEmptyLine: true })
-          .run();
+      action: async ({ rootComponent, model }) => {
+        const files = await openFileOrFiles({
+          multiple: true
+        });
+        if (!files) return;
+        if (files.length === 0) return;
 
-        if (success) await ctx.insertedImageIds;
+        const maxFileSize =
+          rootComponent.std.store.get(FileSizeLimitService).maxFileSize;
+
+        await addSiblingAttachmentBlocks(
+          rootComponent.host,
+          files,
+          maxFileSize,
+          model
+        );
+        tryRemoveEmptyLine(model);
       },
     },
     {

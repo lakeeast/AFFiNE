@@ -14,7 +14,7 @@ export class DicomBlockTransformer extends BaseBlockTransformer<DicomBlockProps>
   ): Promise<SnapshotNode<DicomBlockProps>> {
     const snapshotRet = await super.fromSnapshot(payload);
     const sourceId = snapshotRet.props.sourceId;
-    if (!payload.assets.isEmpty() && sourceId && !sourceId.startsWith('/'))
+    if (!payload.assets.isEmpty() && sourceId)
       await payload.assets.writeToBlob(sourceId);
 
     return snapshotRet;

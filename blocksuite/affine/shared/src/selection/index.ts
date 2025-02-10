@@ -1,4 +1,3 @@
-export { DicomSelection, DicomSelectionExtension } from './dicom.js';
 export {
   HighlightSelection,
   HighlightSelectionExtension,

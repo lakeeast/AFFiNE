@@ -1,5 +1,4 @@
 export { getBlockSelectionsCommand } from './get-block-selections.js';
-export { getDicomSelectionsCommand } from './get-dicom-selections.js';
 export { getImageSelectionsCommand } from './get-image-selections.js';
 export {
   getRangeRects,

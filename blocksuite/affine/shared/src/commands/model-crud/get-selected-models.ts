@@ -4,7 +4,6 @@ import type { BlockModel } from '@blocksuite/store';
 import { getSelectedBlocksCommand } from '../block-crud/get-selected-blocks';
 import {
   getBlockSelectionsCommand,
-  getDicomSelectionsCommand,
   getImageSelectionsCommand,
   getTextSelectionCommand} from '../selection';
 
@@ -52,8 +51,7 @@ export const getSelectedModelsCommand: Command<
     .tryAll(chain => [
       chain.pipe(getTextSelectionCommand),
       chain.pipe(getBlockSelectionsCommand),
-      chain.pipe(getImageSelectionsCommand),
-      chain.pipe(getDicomSelectionsCommand),
+      chain.pipe(getImageSelectionsCommand)
     ])
     .pipe(getSelectedBlocksCommand, { types, mode })
     .pipe(ctx => {
