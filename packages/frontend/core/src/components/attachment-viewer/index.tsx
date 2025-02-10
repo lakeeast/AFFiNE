@@ -1,5 +1,6 @@
 import { ViewBody, ViewHeader } from '@affine/core/modules/workbench';
 
+import { DicomViewer } from './dicom-viewer';
 import { AttachmentPreviewErrorBoundary, Error } from './error';
 import { PDFViewer } from './pdf-viewer';
 import * as styles from './styles.css';
@@ -47,9 +48,7 @@ const AttachmentViewerInner = (props: PDFViewerProps) => {
   } else if (model.type.endsWith('dcm') || model.type.endsWith('dicom')) {
     return (
       <AttachmentPreviewErrorBoundary>
-        <div>
-          DICOM viewer!
-        </div>
+        <DicomViewer {...props} />
       </AttachmentPreviewErrorBoundary>
     );
   } else {
