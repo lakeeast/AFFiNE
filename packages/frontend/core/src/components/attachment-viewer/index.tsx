@@ -36,11 +36,23 @@ export const AttachmentViewerView = ({ model }: AttachmentViewerProps) => {
 };
 
 const AttachmentViewerInner = (props: PDFViewerProps) => {
-  return props.model.type.endsWith('pdf') ? (
-    <AttachmentPreviewErrorBoundary>
-      <PDFViewer {...props} />
-    </AttachmentPreviewErrorBoundary>
-  ) : (
-    <Error {...props} />
-  );
+  const { model } = props;
+
+  if (model.type.endsWith('pdf')) {
+    return (
+      <AttachmentPreviewErrorBoundary>
+        <PDFViewer {...props} />
+      </AttachmentPreviewErrorBoundary>
+    );
+  } else if (model.type.endsWith('dcm') || model.type.endsWith('dicom')) {
+    return (
+      <AttachmentPreviewErrorBoundary>
+        <div>
+          DICOM viewer!
+        </div>
+      </AttachmentPreviewErrorBoundary>
+    );
+  } else {
+    return <Error {...props} />;
+  }
 };
