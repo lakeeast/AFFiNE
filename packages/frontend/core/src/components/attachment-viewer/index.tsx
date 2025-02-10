@@ -45,7 +45,7 @@ const AttachmentViewerInner = (props: PDFViewerProps) => {
         <PDFViewer {...props} />
       </AttachmentPreviewErrorBoundary>
     );
-  } else if (model.type.endsWith('dcm') || model.type.endsWith('dicom')) {
+  } else if (model.name.endsWith('dcm') || model.name.endsWith('dicom')) {
     return (
       <AttachmentPreviewErrorBoundary>
         <DicomViewer {...props} />
