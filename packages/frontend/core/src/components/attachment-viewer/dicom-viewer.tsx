@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-
+import JSZip from 'jszip';
 import type { PDFViewerProps } from './types';
 import { getAttachmentBlob } from './utils';
 
 export function DicomViewer({ model, ...props }: PDFViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [blob, setBlob] = useState<Blob | null>(null);
+  const [blobs, setBlobs] = useState<Array<Blob> | null>(null);
   const [webServerUrl, setWebServerUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -20,7 +20,19 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
     const fetchBlob = async () => {
       try {
         const fetchedBlob = await getAttachmentBlob(model);
-        setBlob(fetchedBlob);
+        // Unzip fetchedBlob
+        const zip = new JSZip();
+        const zipFile = await zip.loadAsync(fetchedBlob as any);
+        // Prepare an array to hold the resulting Blobs
+        const blobs: Blob[] = [];
+
+        // Iterate over each file in the ZIP archive
+        for (const [filename, file] of Object.entries(zip.files)) {
+          // Extract the file as a Blob
+          const fileBlob = await file.async('blob');
+          blobs.push(fileBlob);
+        }
+        setBlobs(blobs);
       } catch (error) {
         console.error('Error fetching blob:', error);
       }
@@ -29,9 +41,9 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
     fetchBlob().catch(console.error);
 
     const handleMessage = async (event: MessageEvent) => {
-      if (event.data.type === 'ohifReady' && iframeRef.current && blob) {
+      if (event.data.type === 'ohifReady' && iframeRef.current && blobs) {
         try {
-          iframeRef.current.contentWindow?.postMessage([blob], '*');
+          iframeRef.current.contentWindow?.postMessage(blobs, '*');
         } catch (error) {
           console.error('Error sending blob to iFrame:', error);
         }
@@ -43,17 +55,16 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [model, blob]);
+  }, [model, blobs]);
 
   return (
     <div style={{ display: "flex", flex: 1, flexDirection: "column", height: "100%" }}>
-  <h3>DICOM Viewer</h3>
-  <iframe
-    ref={iframeRef}
-    src={webServerUrl}
-    style={{ flex: 1, width: "100%", height: "100%", border: "none" }}
-    title="DICOM Viewer"
-  />
-</div>
+      <iframe
+      ref={iframeRef}
+      src={webServerUrl}
+      style={{ flex: 1, width: "100%", height: "100%", border: "none" }}
+      title="DICOM Viewer"
+      />
+    </div>
   );
 }

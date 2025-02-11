@@ -86,6 +86,8 @@ export function getAttachmentFileIcon(filetype: string) {
       return RARFileIcon;
     case 'dcm':
       return DCMFileIcon;
+    case 'dicomdir':
+      return DCMFileIcon;
     default:
       return UnknownFileIcon;
   }
