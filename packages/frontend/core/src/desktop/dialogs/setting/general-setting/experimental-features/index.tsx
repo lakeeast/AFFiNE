@@ -141,21 +141,6 @@ const ExperimentalFeaturesItem = ({
           <div className={styles.description}>{t[flag.description]()}</div>
         </Tooltip>
       )}
-      {!!flag.feedbackType && (
-        <a
-          className={styles.feedback}
-          href={link}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <FeedbackIcon type={flag.feedbackType} />
-          <span>Discussion about this feature</span>
-          <ArrowRightSmallIcon
-            fontSize={20}
-            className={styles.arrowRightIcon}
-          />
-        </a>
-      )}
     </div>
   );
 };

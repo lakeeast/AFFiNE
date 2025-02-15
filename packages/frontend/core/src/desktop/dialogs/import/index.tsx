@@ -284,18 +284,6 @@ const ImportOptions = ({
           )
         )}
       </div>
-      <div className={style.importModalTip}>
-        {t['com.affine.import.modal.tip']()}{' '}
-        <a
-          className={style.link}
-          href="https://discord.gg/whd5mjYqVw"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Discord
-        </a>
-        .
-      </div>
     </>
   );
 };

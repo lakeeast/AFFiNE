@@ -71,7 +71,6 @@ export const AppearanceSettings = () => {
     <>
       <SettingHeader
         title={t['com.affine.appearanceSettings.title']()}
-        subtitle={t['com.affine.appearanceSettings.subtitle']()}
       />
 
       <SettingWrapper title={t['com.affine.appearanceSettings.theme.title']()}>
@@ -101,7 +100,6 @@ export const AppearanceSettings = () => {
             />
           </SettingRow>
         ) : null}
-        {enableThemeEditor ? <ThemeEditorSetting /> : null}
       </SettingWrapper>
 
       {BUILD_CONFIG.isElectron ? (

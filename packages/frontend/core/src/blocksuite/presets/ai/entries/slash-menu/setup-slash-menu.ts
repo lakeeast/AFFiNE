@@ -75,22 +75,6 @@ export function setupSlashMenuAIEntry(slashMenu: AffineSlashMenuWidget) {
   };
 
   const menu = slashMenu.config.items.slice();
-  menu.unshift({
-    name: 'Ask AI',
-    icon: AIStarIcon,
-    showWhen: showWhenWrapper(),
-    action: ({ rootComponent }) => {
-      const view = rootComponent.host.view;
-      const affineAIPanelWidget = view.getWidget(
-        AFFINE_AI_PANEL_WIDGET,
-        rootComponent.model.id
-      ) as AffineAIPanelWidget;
-      assertExists(affineAIPanelWidget);
-      assertExists(AIProvider.actions.chat);
-      assertExists(affineAIPanelWidget.host);
-      handleInlineAskAIAction(affineAIPanelWidget.host);
-    },
-  });
 
   const AIMenuItems: AffineSlashMenuItem[] = [
     { groupName: 'AFFiNE AI' },
