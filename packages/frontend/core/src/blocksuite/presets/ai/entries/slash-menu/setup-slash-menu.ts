@@ -114,8 +114,6 @@ export function setupSlashMenuAIEntry(slashMenu: AffineSlashMenuWidget) {
   const basicGroupEnd = menu.findIndex(
     item => 'groupName' in item && item.groupName === 'List'
   );
-  // insert ai item after basic group
-  menu.splice(basicGroupEnd, 0, ...AIMenuItems);
 
   slashMenu.config = {
     ...AffineSlashMenuWidget.DEFAULT_CONFIG,

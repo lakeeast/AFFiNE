@@ -106,7 +106,7 @@ const DetailPageImpl = memo(function DetailPageImpl() {
   // TODO(@eyhn): remove jotai here
   const [_, setActiveBlockSuiteEditor] = useActiveBlocksuiteEditor();
 
-  const enableAI = featureFlagService.flags.enable_ai.value;
+  const enableAI = false; // featureFlagService.flags.enable_ai.value;
 
   useEffect(() => {
     if (isActiveView) {
