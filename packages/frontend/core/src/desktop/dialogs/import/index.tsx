@@ -39,7 +39,7 @@ import * as style from './styles.css';
 
 const logger = new DebugLogger('import');
 
-type ImportType = 'markdown' | 'markdownZip' | 'notion' | 'snapshot' | 'html';
+type ImportType = 'markdown' | 'markdownZip' | 'notion' | 'snapshot' | 'html' | 'quantant';
 type AcceptType = 'Markdown' | 'Zip' | 'Html';
 type Status = 'idle' | 'importing' | 'success' | 'error';
 type ImportResult = {
@@ -121,6 +121,15 @@ const importOptions = [
     ),
     testId: 'editor-option-menu-import-snapshot',
     type: 'snapshot' as ImportType,
+  },
+  {
+    key: 'quantant',
+    label: 'com.affine.import.quantant',
+    prefixIcon: (
+      <PageIcon color={cssVarV2('icon/primary')} width={20} height={20} />
+    ),
+    testId: 'editor-option-menu-import-quantant',
+    type: 'quantant' as ImportType,
   },
 ];
 
@@ -209,6 +218,21 @@ const importConfigs: Record<ImportType, ImportConfig> = {
         throw new Error('Expected a single zip file for snapshot import');
       }
       const docIds = (await ZipTransformer.importDocs(docCollection, file))
+        .filter(doc => doc !== undefined)
+        .map(doc => doc.id);
+
+      return {
+        docIds,
+      };
+    },
+  },
+  quantant: {
+    fileOptions: { acceptType: 'Zip', multiple: false },
+    importFunction: async (docCollection, file) => {
+      if (Array.isArray(file)) {
+        throw new Error('Expected a single zip file for snapshot import');
+      }
+      const docIds = (await ZipTransformer.importDocsFromQuantant(docCollection, file))
         .filter(doc => doc !== undefined)
         .map(doc => doc.id);
 
@@ -379,13 +403,14 @@ export const ImportDialog = ({
       setImportError(null);
       try {
         const importConfig = importConfigs[type];
-        const file = await openFileOrFiles(importConfig.fileOptions);
-
+        const file = type !== 'quantant' ? await openFileOrFiles(importConfig.fileOptions) : null;
+        /*
         if (!file || (Array.isArray(file) && file.length === 0)) {
           throw new Error(
             t['com.affine.import.status.failed.message.no-file-selected']()
           );
         }
+        */
 
         setStatus('importing');
         track.$.importModal.$.import({

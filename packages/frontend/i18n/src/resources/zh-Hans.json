@@ -550,6 +550,7 @@
   "com.affine.import.notion": "Notion",
   "com.affine.import.notion.tooltip": "导入您的 Notion 数据。支持导入格式：HTML 带子页面。",
   "com.affine.import.snapshot": "快照",
+  "com.affine.import.quantant": "OSS",
   "com.affine.import.status.failed.message": "导入失败，请重试。",
   "com.affine.import.status.failed.message.no-file-selected": "未选择文件",
   "com.affine.import.status.failed.title": "导入失败",
