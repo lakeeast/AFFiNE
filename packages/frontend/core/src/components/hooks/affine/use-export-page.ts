@@ -29,7 +29,7 @@ import { nanoid } from 'nanoid';
 
 import { useAsyncCallback } from '../affine-async-hooks';
 
-type ExportType = 'pdf' | 'html' | 'png' | 'markdown' | 'snapshot';
+type ExportType = 'pdf' | 'html' | 'png' | 'markdown' | 'snapshot' | 'quantant';
 
 interface ExportHandlerOptions {
   page: Store;
@@ -149,6 +149,9 @@ async function exportHandler({
       return;
     case 'snapshot':
       await ZipTransformer.exportDocs(page.workspace, [page]);
+      return;
+    case 'quantant':
+      await ZipTransformer.exportDocsToQuantant(page.workspace, [page]);
       return;
     case 'pdf':
       await printToPdf(editorContainer);

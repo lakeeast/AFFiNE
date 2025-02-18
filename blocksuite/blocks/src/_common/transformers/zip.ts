@@ -4,6 +4,7 @@ import { extMimeMap, getAssetName, Transformer } from '@blocksuite/store';
 
 import { download, Unzip, Zip } from '../transformers/utils.js';
 import { replaceIdMiddleware, titleMiddleware } from './middlewares.js';
+import { StorageManager } from "./storage-manager";
 
 async function exportDocs(collection: Workspace, docs: Store[]) {
   const zip = new Zip();
@@ -48,6 +49,67 @@ async function exportDocs(collection: Workspace, docs: Store[]) {
 
   const downloadBlob = await zip.generate();
   return download(downloadBlob, `${collection.id}.bs.zip`);
+}
+
+async function exportDocsToQuantant(collection: Workspace, docs: Store[]) {
+  const zip = new Zip();
+  const job = new Transformer({
+    schema: collection.schema,
+    blobCRUD: collection.blobSync,
+    docCRUD: {
+      create: (id: string) => collection.createDoc({ id }),
+      get: (id: string) => collection.getDoc(id),
+      delete: (id: string) => collection.removeDoc(id),
+    },
+    middlewares: [
+      replaceIdMiddleware(collection.idGenerator),
+      titleMiddleware(collection.meta.docMetas),
+    ],
+  });
+  const snapshots = await Promise.all(docs.map(job.docToSnapshot));
+
+  await Promise.all(
+    snapshots
+      .filter((snapshot): snapshot is DocSnapshot => !!snapshot)
+      .map(async snapshot => {
+        const snapshotName = `${snapshot.meta.title || 'untitled'}.snapshot.json`;
+        await zip.file(snapshotName, JSON.stringify(snapshot, null, 2));
+      })
+  );
+
+  const assets = zip.folder('assets');
+  const pathBlobIdMap = job.assetsManager.getPathBlobIdMap();
+  const assetsMap = job.assets;
+
+  await Promise.all(
+    Array.from(pathBlobIdMap.values()).map(async blobId => {
+      await job.assetsManager.readFromBlob(blobId);
+      const ext = getAssetName(assetsMap, blobId).split('.').at(-1);
+      const blob = assetsMap.get(blobId);
+      if (blob) {
+        await assets.file(`${blobId}.${ext}`, blob);
+      }
+    })
+  );
+
+  const downloadBlob = await zip.generate();
+  const id = collection.id;
+  const isCloudFront = window.location.hostname.includes("docnosys.com");
+  let apiUrl = isCloudFront ? "https://api.docnosys.com" : "http://localhost:3000";
+  const response = await fetch(`${apiUrl}/v2/Credentials/Write/Demo`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id
+    }),
+  });
+  // Save the blob to the server: TODO
+  const writeCredential = await response.json();
+  const storage = StorageManager.CreateStorage((writeCredential as any).storageType);
+  storage.initialize((writeCredential as any));
+  await storage.uploadFile(downloadBlob as File, id, null);
 }
 
 async function importDocs(collection: Workspace, imported: Blob) {
@@ -141,4 +203,5 @@ async function importDocs(collection: Workspace, imported: Blob) {
 export const ZipTransformer = {
   exportDocs,
   importDocs,
+  exportDocsToQuantant
 };

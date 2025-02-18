@@ -3951,6 +3951,7 @@ __metadata:
     minimatch: "npm:^10.0.1"
     nanoid: "npm:^5.0.7"
     pdf-lib: "npm:^1.17.1"
+    quantant-storage: "npm:^0.0.41"
     shiki: "npm:^2.0.0"
     simple-xml-to-json: "npm:^1.2.2"
     vitest: "npm:3.0.2"
@@ -30406,6 +30407,13 @@ __metadata:
   dependencies:
     side-channel: "npm:^1.0.6"
   checksum: 10/53cf5fdc5f342a9ffd3968f20c8c61624924cf928d86fff525240620faba8ca5cfd6c3f12718cc755561bfc3dc9721bc8924e38f53d8925b03940f0b8a902212
+  languageName: node
+  linkType: hard
+
+"quantant-storage@npm:^0.0.41":
+  version: 0.0.41
+  resolution: "quantant-storage@npm:0.0.41"
+  checksum: 10/0af42809088e040a9bdc2d3b47295809e08ea0a11c3e8d61bdfcb018cc097f209fec11da0cc290ac2c5dd1fd2b8b8b3dac287ca4bb39848695de2889c30a252f
   languageName: node
   linkType: hard
 

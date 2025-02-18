@@ -24,7 +24,7 @@ interface ExportMenuItemProps<T> {
 
 interface ExportProps {
   exportHandler: (
-    type: 'pdf' | 'html' | 'png' | 'markdown' | 'snapshot'
+    type: 'pdf' | 'html' | 'png' | 'markdown' | 'snapshot' | 'quantant'
   ) => void;
   pageMode?: 'page' | 'edgeless';
   className?: string;
@@ -103,6 +103,13 @@ export const ExportMenuItems = ({
         type="snapshot"
         icon={<PageIcon />}
         label={t['Export to Snapshot']()}
+      />
+      <ExportMenuItem
+        onSelect={() => exportHandler('quantant')}
+        className={className}
+        type="snapshot"
+        icon={<PageIcon />}
+        label={t['Export to OSS']()}
       />
     </>
   );

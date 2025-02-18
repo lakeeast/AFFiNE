@@ -85,6 +85,7 @@
     "@types/katex": "^0.16.7",
     "@types/lodash.isequal": "^4.5.8",
     "jszip": "^3.10.1",
+    "quantant-storage": "^0.0.41",
     "vitest": "3.0.2"
   }
 }
