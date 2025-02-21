@@ -28,7 +28,7 @@ export class BlobSyncImpl implements BlobSync {
     isStorageOverCapacity: false,
   });
   private abort: AbortController | null = null;
-  private maxBlobSize: number = 1024 * 1024 * 100; // 100MB
+  private maxBlobSize: number = 1024 * 1024 * 10000; // 100MB: Chen changed to 10000MB
   readonly event = new EventEmitter2();
 
   constructor(readonly storages: PeerStorageOptions<BlobStorage>) {}
