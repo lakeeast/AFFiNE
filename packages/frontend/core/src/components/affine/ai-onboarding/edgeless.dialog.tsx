@@ -64,7 +64,8 @@ export const AIOnboardingEdgeless = () => {
   }, [workspaceDialogService]);
 
   useEffect(() => {
-    if (generalAIOnboardingOpened) return;
+    //if (generalAIOnboardingOpened) return;
+    return;
     if (notifyId) return;
     if (mode !== 'edgeless') return;
     if (timeoutRef.current) {
