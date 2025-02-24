@@ -157,7 +157,7 @@ export const AIOnboardingGeneral = () => {
 
   // show dialog when it's mounted
   useEffect(() => {
-    showAIOnboardingGeneral$.next(true);
+    showAIOnboardingGeneral$.next(false);
   }, []);
 
   useEffect(() => {
