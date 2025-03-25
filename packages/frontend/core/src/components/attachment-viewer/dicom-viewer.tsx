@@ -41,6 +41,7 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
         if (files && files.length > 0) {
           const parent = modelRef.current.parent;
           const originalName = modelRef.current.name;
+          const originalCaption = modelRef.current.caption;
           const parentId = parent.id;
 
           const originalBlob = await getAttachmentBlob(modelRef.current);
@@ -54,7 +55,7 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
             }
           }
 
-          files.forEach((file, index) => {
+          Array.from(files).forEach((file, index) => {
             zip.file(file.name || `file-${index}`, file);
           });
 
@@ -72,6 +73,7 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
             size: combinedZipBlob.size,
             type: 'application/zip',
             sourceId: newSourceId,
+            caption: originalCaption, // Preserve the original caption
             embed: false,
             style: 'horizontalThin',
             index: modelRef.current.index,
