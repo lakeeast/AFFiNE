@@ -66,6 +66,7 @@ import type { BlockModel } from '@blocksuite/store';
 import { Slice, Text } from '@blocksuite/store';
 import JSZip from 'jszip';
 import type { TemplateResult } from 'lit';
+import { v4 as uuidv4 } from 'uuid'; // Add uuid package
 
 import type { RootBlockComponent } from '../../types.js';
 import { formatDate, formatTime } from '../../utils/misc.js';
@@ -315,7 +316,8 @@ export const defaultSlashMenuConfig: SlashMenuConfig = {
         const zipFileName = firstFileName + '.dicomdir';
         const zip = new JSZip();
         files.forEach(file => {
-          zip.file(file.name, file);
+          const guid = uuidv4();
+          zip.file(guid, file);
         });
         const blob = await zip.generateAsync({ type: 'blob'});
         const zipFile = new File([blob], zipFileName, { type: "application/dicomdir" });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import JSZip from 'jszip';
+import { v4 as uuidv4 } from 'uuid'; // Add uuid package
 import type { PDFViewerProps } from './types';
 import { getAttachmentBlob } from './utils';
 
@@ -50,13 +51,15 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
             const originalZip = await zip.loadAsync(originalBlob as any);
             for (const [filename, file] of Object.entries(originalZip.files)) {
               if (!file.dir) {
+
                 zip.file(filename, await file.async('blob'));
               }
             }
           }
 
           Array.from(files).forEach((file, index) => {
-            zip.file(file.name || `file-${index}`, file);
+            const guid = uuidv4();
+            zip.file(guid, file);
           });
 
           const combinedZipBlob = await zip.generateAsync({ type: 'blob' });
