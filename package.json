@@ -35,8 +35,7 @@
     "typecheck": "tsc -b tsconfig.json --verbose",
     "postinstall": "yarn affine init && yarn husky",
     "build:web": "yarn affine build -p @affine/web",
-    "deploy": "aws s3 sync packages/frontend/apps/web/dist s3://workspace.docnosys.com --delete --profile Chen",
-    "wdeploy": "aws s3 sync packages/frontend/apps/web/dist s3://knowledge.docnosys.com --delete --profile Chen"
+    "deploy": "aws s3 sync packages/frontend/apps/web/dist s3://workspace.docnosys.com --delete --profile Chen"
   },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown --cache",

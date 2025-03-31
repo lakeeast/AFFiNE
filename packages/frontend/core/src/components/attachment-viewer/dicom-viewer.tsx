@@ -14,7 +14,7 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
 
   useEffect(() => {
     const isCloudFront = window.location.hostname.includes("docnosys.com");
-    setWebServerUrl(isCloudFront ? `${window.location.origin}/qviewer` : "http://localhost:5478");
+    setWebServerUrl(isCloudFront ? `https://docnosys.com/qviewer` : "http://localhost:5478");
   }, []);
 
   useEffect(() => {
