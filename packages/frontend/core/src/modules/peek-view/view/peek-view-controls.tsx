@@ -15,6 +15,7 @@ import {
   type HTMLAttributes,
   type MouseEventHandler,
   type ReactElement,
+  type RefObject,
   type SVGAttributes,
   useCallback,
   useEffect,
@@ -162,11 +163,13 @@ export const DocPeekViewControls = ({
 type AttachmentPeekViewControls = HTMLAttributes<HTMLDivElement> & {
   mode?: DocMode;
   docRef: AttachmentPeekViewInfo['docRef'];
+  viewerRef?: RefObject<{ close?: () => Promise<void> }>; // Add viewerRef
 };
 
 export const AttachmentPeekViewControls = ({
   docRef,
   className,
+  viewerRef,
   ...rest
 }: AttachmentPeekViewControls) => {
   const { docId, blockIds: [blockId] = [], filetype: type } = docRef;
@@ -174,20 +177,27 @@ export const AttachmentPeekViewControls = ({
   const workbench = useService(WorkbenchService).workbench;
   const t = useI18n();
 
+  const handleClose = useCallback(async () => {
+    console.log('AttachmentPeekViewControls: Closing with cleanup, viewerRef.current:', viewerRef?.current);
+    if (viewerRef?.current?.close) {
+      await viewerRef.current.close();
+    }
+    peekView.close();
+  }, [viewerRef, peekView]);
+
   const controls = useMemo(() => {
     const controls = [
       {
         icon: <CloseIcon />,
         nameKey: 'close',
         name: t['com.affine.peek-view-controls.close'](),
-        onClick: () => peekView.close(),
+        onClick: handleClose, // Use handleClose with cleanup
       },
     ];
     if (!type) return controls;
 
     return [
       ...controls,
-      // TODO(@fundon): needs to be implemented on mobile
       BUILD_CONFIG.isDesktopEdition && {
         icon: <ExpandFullIcon />,
         name: t['com.affine.peek-view-controls.open-attachment'](),
@@ -195,7 +205,6 @@ export const AttachmentPeekViewControls = ({
         onClick: () => {
           workbench.openAttachment(docId, blockId);
           peekView.close(false);
-
           track.$.attachment.$.openAttachmentInFullscreen({ type });
         },
       },
@@ -206,25 +215,21 @@ export const AttachmentPeekViewControls = ({
         onClick: () => {
           workbench.openAttachment(docId, blockId, { at: 'new-tab' });
           peekView.close(false);
-
           track.$.attachment.$.openAttachmentInNewTab({ type });
         },
       },
       BUILD_CONFIG.isElectron && {
         icon: <SplitViewIcon />,
         nameKey: 'split-view',
-        name: t[
-          'com.affine.peek-view-controls.open-attachment-in-split-view'
-        ](),
+        name: t['com.affine.peek-view-controls.open-attachment-in-split-view'](),
         onClick: () => {
           workbench.openAttachment(docId, blockId, { at: 'beside' });
           peekView.close(false);
-
           track.$.attachment.$.openAttachmentInSplitView({ type });
         },
       },
     ].filter((opt): opt is ControlButtonProps => Boolean(opt));
-  }, [t, peekView, workbench, docId, blockId, type]);
+  }, [t, peekView, workbench, docId, blockId, type, handleClose]);
 
   useEffect(() => {
     if (type === undefined) return;

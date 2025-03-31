@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, forwardRef, ForwardedRef } from 'react';
 import JSZip from 'jszip';
 import type { PDFViewerProps } from './types';
 import { getAttachmentBlob } from './utils';
 
-export function DicomViewer({ model, ...props }: PDFViewerProps) {
+export const DicomViewer = forwardRef(function DicomViewer(
+  { model, ...props }: PDFViewerProps,
+  ref: ForwardedRef<{ close: () => Promise<void> }>
+) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [webServerUrl, setWebServerUrl] = useState<string | undefined>(undefined);
   const modelRef = useRef(model);
@@ -17,7 +20,39 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
     setWebServerUrl(isCloudFront ? `https://docnosys.com/qviewer` : "http://localhost:5478");
   }, []);
 
+  const close = async () => {
+    console.log('DicomViewer: close called, iframeRef.current:', iframeRef.current);
+    if (iframeRef.current) {
+      try {
+        // Attempt to call cleanup if available
+        if (iframeRef.current.contentWindow && typeof iframeRef.current.contentWindow.cleanup === 'function') {
+          iframeRef.current.contentWindow.cleanup();
+        } else {
+          console.warn('DicomViewer: No cleanup function found in iframe contentWindow or cross-origin restriction');
+        }
+      } catch (error) {
+        console.error('DicomViewer: Cleanup failed:', error);
+      }
+      // Clear iFrame content to release resources
+      iframeRef.current.src = '';
+      // Remove iFrame from DOM explicitly
+      if (iframeRef.current.parentNode) {
+        iframeRef.current.parentNode.removeChild(iframeRef.current);
+      }
+    }
+    console.log('DicomViewer: iFrame cleanup completed');
+  };
+
   useEffect(() => {
+    console.log('DicomViewer: Mounted, iframeRef.current:', iframeRef.current);
+    if (ref) {
+      if (typeof ref === 'function') {
+        ref({ close });
+      } else {
+        ref.current = { close };
+      }
+    }
+
     const doc = modelRef.current.doc;
     const handleMessage = async (event: MessageEvent) => {
       if (typeof event.data === "string" && event.data.startsWith("setImmediate$")) {
@@ -31,19 +66,24 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
           const zipFile = await zip.loadAsync(fetchedBlob as any);
           const blobs = await Promise.all(
             Object.entries(zipFile.files)
-                .filter(([fileName, file]) => !file.dir) // Ignore directories
-                .map(async ([fileName, file]) => {
-                    const blob = await file.async('blob');
-                    (blob as any).name = fileName; // Manually attach name property
-                    return blob;
-                })
+              .filter(([fileName, file]) => !file.dir) // Ignore directories
+              .map(async ([fileName, file]) => {
+                const blob = await file.async('blob');
+                (blob as any).name = fileName; // Manually attach name property
+                return blob;
+              })
           );
           console.log(`Sending to iFrame: with ${blobs.length} blobs`);
           const blobsWithMeta = blobs.map(blob => ({
             blob,
             name: (blob as any).name
           }));
-          iframeRef?.current?.contentWindow?.postMessage(blobsWithMeta, '*');
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(blobsWithMeta, '*');
+          }
+          // Clear blobsWithMeta and blobs after sending
+          blobsWithMeta.length = 0;
+          blobs.length = 0;
         }
       } else if (event.data.type === "appendFiles") {
         console.log("Received appendFiles message");
@@ -57,7 +97,6 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
           const originalBlob = await getAttachmentBlob(modelRef.current);
           const zip = new JSZip();
 
-          // Add original files
           if (originalBlob) {
             const originalZip = await zip.loadAsync(originalBlob as any);
             await Promise.all(
@@ -70,7 +109,6 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
             );
           }
 
-          // Add new files
           Array.from(files).forEach((file, index) => {
             const filename = file.name;
             zip.file(filename, file);
@@ -114,16 +152,16 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
           const parentId = parent.id;
 
           const originalBlob = await getAttachmentBlob(modelRef.current);
-          const newZip = new JSZip(); // New, empty ZIP for the result
+          const newZip = new JSZip();
 
           if (originalBlob) {
-            const originalZip = new JSZip(); // Separate instance to read original
+            const originalZip = new JSZip();
             await originalZip.loadAsync(originalBlob as any);
             await Promise.all(
               Object.entries(originalZip.files).map(async ([filename, file]) => {
                 if (!file.dir && !file_names.includes(filename)) {
                   const blob = await file.async('blob');
-                  newZip.file(filename, blob); // Add to new ZIP
+                  newZip.file(filename, blob);
                 }
               })
             );
@@ -161,7 +199,10 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
     };
 
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      console.log('DicomViewer: Unmounting, iframeRef.current:', iframeRef.current);
+    };
   }, [model]);
 
   return (
@@ -174,4 +215,4 @@ export function DicomViewer({ model, ...props }: PDFViewerProps) {
       />
     </div>
   );
-}
+});

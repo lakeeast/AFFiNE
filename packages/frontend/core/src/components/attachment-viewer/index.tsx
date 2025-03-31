@@ -1,5 +1,5 @@
+import { forwardRef, ForwardedRef, useEffect, useRef } from 'react';
 import { ViewBody, ViewHeader } from '@affine/core/modules/workbench';
-
 import { DicomViewer } from './dicom-viewer';
 import { AttachmentPreviewErrorBoundary, Error } from './error';
 import { PDFViewer } from './pdf-viewer';
@@ -8,21 +8,50 @@ import { Titlebar } from './titlebar';
 import type { AttachmentViewerProps, PDFViewerProps } from './types';
 import { buildAttachmentProps } from './utils';
 
-// In Peek view
-export const AttachmentViewer = ({ model }: AttachmentViewerProps) => {
-  const props = buildAttachmentProps(model);
+export const AttachmentViewer = forwardRef(
+  ({ model }: AttachmentViewerProps, ref: ForwardedRef<{ close?: () => Promise<void> }>) => {
+    const props = buildAttachmentProps(model);
+    const innerRef = useRef<{ close?: () => Promise<void> }>(null);
 
-  return (
-    <div className={styles.viewerContainer}>
-      <Titlebar {...props} />
-      <AttachmentViewerInner {...props} />
-    </div>
-  );
-};
+    const close = async () => {
+      console.log('AttachmentViewer: close called');
+      if (innerRef.current?.close) {
+        await innerRef.current.close();
+      }
+    };
 
-// In View container
+    useEffect(() => {
+      console.log('AttachmentViewer: Mounted, model:', model.name);
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref({ close });
+        } else {
+          ref.current = { close };
+        }
+      }
+      return () => {
+        console.log('AttachmentViewer: Unmounting, model:', model.name);
+      };
+    }, [model, ref]);
+
+    return (
+      <div className={styles.viewerContainer}>
+        <Titlebar {...props} />
+        <AttachmentViewerInner {...props} ref={innerRef} />
+      </div>
+    );
+  }
+);
+
 export const AttachmentViewerView = ({ model }: AttachmentViewerProps) => {
   const props = buildAttachmentProps(model);
+
+  useEffect(() => {
+    console.log('AttachmentViewerView: Mounted, model:', model.name);
+    return () => {
+      console.log('AttachmentViewerView: Unmounting, model:', model.name);
+    };
+  }, [model]);
 
   return (
     <>
@@ -36,22 +65,46 @@ export const AttachmentViewerView = ({ model }: AttachmentViewerProps) => {
   );
 };
 
-const AttachmentViewerInner = (props: PDFViewerProps) => {
-  const { model } = props;
+const AttachmentViewerInner = forwardRef(
+  (props: PDFViewerProps, ref: ForwardedRef<{ close?: () => Promise<void> }>) => {
+    const { model } = props;
+    const dicomViewerRef = useRef<{ close: () => Promise<void> }>(null);
 
-  if (model.type.endsWith('pdf')) {
-    return (
-      <AttachmentPreviewErrorBoundary>
-        <PDFViewer {...props} />
-      </AttachmentPreviewErrorBoundary>
-    );
-  } else if (model.name.endsWith('dicomdir')) {
-    return (
-      <AttachmentPreviewErrorBoundary>
-        <DicomViewer {...props} />
-      </AttachmentPreviewErrorBoundary>
-    );
-  } else {
-    return <Error {...props} />;
+    const close = async () => {
+      console.log('AttachmentViewerInner: close called');
+      if (dicomViewerRef.current?.close) {
+        await dicomViewerRef.current.close();
+      }
+    };
+
+    useEffect(() => {
+      console.log('AttachmentViewerInner: Mounted, model:', model.name);
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref({ close });
+        } else {
+          ref.current = { close };
+        }
+      }
+      return () => {
+        console.log('AttachmentViewerInner: Unmounting, model:', model.name);
+      };
+    }, [model, ref]);
+
+    if (model.type.endsWith('pdf')) {
+      return (
+        <AttachmentPreviewErrorBoundary>
+          <PDFViewer {...props} />
+        </AttachmentPreviewErrorBoundary>
+      );
+    } else if (model.name.endsWith('dicomdir')) {
+      return (
+        <AttachmentPreviewErrorBoundary>
+          <DicomViewer {...props} ref={dicomViewerRef} />
+        </AttachmentPreviewErrorBoundary>
+      );
+    } else {
+      return <Error {...props} />;
+    }
   }
-};
+);
