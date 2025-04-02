@@ -69,136 +69,146 @@ export const DicomViewer = forwardRef(function DicomViewer(
         return;
       }
 
-      switch (event.data.type) {
-        case 'ohifReady': {
-          const fetchedBlob = await getAttachmentBlob(modelRef.current);
-          if (fetchedBlob) {
-            const zip = new JSZip();
-            const zipFile = await zip.loadAsync(fetchedBlob as any);
-            const blobs = await Promise.all(
-              Object.entries(zipFile.files)
-                .filter(([fileName, file]) => !file.dir)
-                .map(async ([fileName, file]) => {
-                  const blob = await file.async('blob');
-                  (blob as any).name = fileName;
-                  return blob;
-                })
-            );
-            console.log(`Sending to iFrame: with ${blobs.length} blobs`);
-            const blobsWithMeta = blobs.map(blob => ({
-              blob,
-              name: (blob as any).name
-            }));
-            iframeRef.current?.contentWindow?.postMessage(blobsWithMeta, '*');
-            blobsWithMeta.length = 0;
-            blobs.length = 0;
-            zip.files = {};
+      if (event.data.type === 'ohifReady') {
+        const fetchedBlob = await getAttachmentBlob(modelRef.current);
+        if (fetchedBlob) {
+          const zip = new JSZip();
+          const zipFile = await zip.loadAsync(fetchedBlob as any);
+          const blobs = await Promise.all(
+            Object.entries(zipFile.files)
+              .filter(([fileName, file]) => !file.dir) // Ignore directories
+              .map(async ([fileName, file]) => {
+                const blob = await file.async('blob');
+                (blob as any).name = fileName; // Manually attach name property
+                return blob;
+              })
+          );
+          console.log(`Sending to iFrame: with ${blobs.length} blobs`);
+          const blobsWithMeta = blobs.map(blob => ({
+            blob,
+            name: (blob as any).name
+          }));
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(blobsWithMeta, '*');
           }
-          break;
+          // Clear blobsWithMeta and blobs after sending
+          blobsWithMeta.length = 0;
+          blobs.length = 0;
         }
-        case 'doneCleanup': {
+      } 
+      else if (event.data.type === 'doneCleanup') {
           cleanupResolveRef.current?.();
           cleanupResolveRef.current = null;
-          break;
-        }
-        case 'appendFiles': {
-          console.log("Received appendFiles message");
-          const { files }: { files: File[] } = event.data;
-          if (files?.length > 0) {
-            const parent = modelRef.current.parent;
-            const { name: originalName, caption: originalCaption, index, xywh } = modelRef.current;
-            const parentId = parent.id;
+      }
+      else if (event.data.type === "appendFiles") {
+        console.log("Received appendFiles message");
+        const { files }: { files: File[] } = event.data;
+        if (files && files.length > 0) {
+          const parent = modelRef.current.parent;
+          const originalName = modelRef.current.name;
+          const originalCaption = modelRef.current.caption;
+          const parentId = parent.id;
 
-            const originalBlob = await getAttachmentBlob(modelRef.current);
-            const zip = new JSZip();
+          const originalBlob = await getAttachmentBlob(modelRef.current);
+          const zip = new JSZip();
 
-            if (originalBlob) {
-              const originalZip = await zip.loadAsync(originalBlob as any);
-              await Promise.all(
-                Object.entries(originalZip.files).map(async ([filename, file]) => {
-                  if (!file.dir) {
-                    const blob = await file.async('blob');
-                    zip.file(filename, blob);
-                  }
-                })
-              );
-            }
-
-            files.forEach(file => zip.file(file.name, file));
-            const combinedZipBlob = await zip.generateAsync({ type: 'blob' });
-            const oldSourceId = modelRef.current.sourceId;
-
-            doc.deleteBlock(modelRef.current);
-            if (oldSourceId) await doc.blobSync.delete(oldSourceId);
-
-            const newSourceId = await doc.blobSync.set(combinedZipBlob);
-            const newBlockId = doc.addBlock('affine:attachment', {
-              name: originalName,
-              size: combinedZipBlob.size,
-              type: 'application/zip',
-              sourceId: newSourceId,
-              caption: originalCaption,
-              embed: false,
-              style: 'horizontalThin',
-              index,
-              xywh,
-              lockedBySelf: false,
-              rotate: 0,
-            }, parentId);
-
-            modelRef.current = doc.getBlockById(newBlockId) as any;
-            console.log('Attachment replaced with combined ZIP');
+          if (originalBlob) {
+            const originalZip = await zip.loadAsync(originalBlob as any);
+            await Promise.all(
+              Object.entries(originalZip.files).map(async ([filename, file]) => {
+                if (!file.dir) {
+                  const blob = await file.async('blob');
+                  zip.file(filename, blob);
+                }
+              })
+            );
           }
-          break;
-        }
-        case 'removeFiles': {
-          console.log("Received removeFiles message");
-          const { file_names }: { file_names: string[] } = event.data;
-          if (file_names?.length > 0) {
-            const parent = modelRef.current.parent;
-            const { name: originalName, caption: originalCaption, index, xywh } = modelRef.current;
-            const parentId = parent.id;
 
-            const originalBlob = await getAttachmentBlob(modelRef.current);
-            const newZip = new JSZip();
+          Array.from(files).forEach((file, index) => {
+            const filename = file.name;
+            zip.file(filename, file);
+          });
 
-            if (originalBlob) {
-              const originalZip = await newZip.loadAsync(originalBlob as any);
-              await Promise.all(
-                Object.entries(originalZip.files).map(async ([filename, file]) => {
-                  if (!file.dir && !file_names.includes(filename)) {
-                    const blob = await file.async('blob');
-                    newZip.file(filename, blob);
-                  }
-                })
-              );
-            }
+          const combinedZipBlob = await zip.generateAsync({ type: 'blob' });
 
-            const updatedZipBlob = await newZip.generateAsync({ type: 'blob' });
-            const oldSourceId = modelRef.current.sourceId;
-
-            doc.deleteBlock(modelRef.current);
-            if (oldSourceId) await doc.blobSync.delete(oldSourceId);
-
-            const newSourceId = await doc.blobSync.set(updatedZipBlob);
-            const newBlockId = doc.addBlock('affine:attachment', {
-              name: originalName,
-              size: updatedZipBlob.size,
-              type: 'application/zip',
-              sourceId: newSourceId,
-              caption: originalCaption,
-              embed: false,
-              style: 'horizontalThin',
-              index,
-              xywh,
-              lockedBySelf: false,
-              rotate: 0,
-            }, parentId);
-
-            modelRef.current = doc.getBlockById(newBlockId) as any;
-            console.log('Attachment replaced with updated ZIP (files removed)');
+          const oldSourceId = modelRef.current.sourceId;
+          doc.deleteBlock(modelRef.current);
+          if (oldSourceId) {
+            await doc.blobSync.delete(oldSourceId);
           }
-          break;
+
+          const newSourceId = await doc.blobSync.set(combinedZipBlob);
+          const newAttachmentProps = {
+            name: originalName,
+            size: combinedZipBlob.size,
+            type: 'application/zip',
+            sourceId: newSourceId,
+            caption: originalCaption,
+            embed: false,
+            style: 'horizontalThin',
+            index: modelRef.current.index,
+            xywh: modelRef.current.xywh,
+            lockedBySelf: false,
+            rotate: 0,
+          };
+
+          const newBlockId = doc.addBlock('affine:attachment', newAttachmentProps, parentId);
+          modelRef.current = doc.getBlockById(newBlockId) as any;
+
+          console.log('Attachment replaced with combined ZIP');
+        }
+      } else if (event.data.type === "removeFiles") {
+        console.log("Received removeFiles message");
+        const { file_names }: { file_names: string[] } = event.data;
+        if (file_names && file_names.length > 0) {
+          const parent = modelRef.current.parent;
+          const originalName = modelRef.current.name;
+          const originalCaption = modelRef.current.caption;
+          const parentId = parent.id;
+
+          const originalBlob = await getAttachmentBlob(modelRef.current);
+          const newZip = new JSZip();
+
+          if (originalBlob) {
+            const originalZip = new JSZip();
+            await originalZip.loadAsync(originalBlob as any);
+            await Promise.all(
+              Object.entries(originalZip.files).map(async ([filename, file]) => {
+                if (!file.dir && !file_names.includes(filename)) {
+                  const blob = await file.async('blob');
+                  newZip.file(filename, blob);
+                }
+              })
+            );
+          }
+
+          const updatedZipBlob = await newZip.generateAsync({ type: 'blob' });
+
+          const oldSourceId = modelRef.current.sourceId;
+          doc.deleteBlock(modelRef.current);
+          if (oldSourceId) {
+            await doc.blobSync.delete(oldSourceId);
+          }
+
+          const newSourceId = await doc.blobSync.set(updatedZipBlob);
+          const newAttachmentProps = {
+            name: originalName,
+            size: updatedZipBlob.size,
+            type: 'application/zip',
+            sourceId: newSourceId,
+            caption: originalCaption,
+            embed: false,
+            style: 'horizontalThin',
+            index: modelRef.current.index,
+            xywh: modelRef.current.xywh,
+            lockedBySelf: false,
+            rotate: 0,
+          };
+
+          const newBlockId = doc.addBlock('affine:attachment', newAttachmentProps, parentId);
+          modelRef.current = doc.getBlockById(newBlockId) as any;
+
+          console.log('Attachment replaced with updated ZIP (files removed)');
         }
       }
     };
