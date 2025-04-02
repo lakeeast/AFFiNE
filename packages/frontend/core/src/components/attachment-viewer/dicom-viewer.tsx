@@ -154,6 +154,14 @@ export const DicomViewer = forwardRef(function DicomViewer(
 
           const newBlockId = doc.addBlock('affine:attachment', newAttachmentProps, parentId);
           modelRef.current = doc.getBlockById(newBlockId) as any;
+          window.dispatchEvent(
+            new CustomEvent('attachmentUpdated', {
+              detail: {
+                blockId: newBlockId,
+                size: combinedZipBlob.size,
+              },
+            })
+          );
 
           console.log('Attachment replaced with combined ZIP');
         }
@@ -209,6 +217,14 @@ export const DicomViewer = forwardRef(function DicomViewer(
           modelRef.current = doc.getBlockById(newBlockId) as any;
 
           console.log('Attachment replaced with updated ZIP (files removed)');
+          window.dispatchEvent(
+            new CustomEvent('attachmentUpdated', {
+              detail: {
+                blockId: newBlockId,
+                size: updatedZipBlob.size,
+              },
+            })
+          );
         }
       }
     };
