@@ -123,7 +123,7 @@ class LocalWorkspaceFlavourProvider implements WorkspaceFlavourProvider {
       docStorage: DocStorage
     ) => Promise<void>
   ): Promise<WorkspaceMetadata> {
-    const id = nanoid();
+    const id = 'local_workspace';
 
     // save the initial state to local storage, then sync to cloud
     const docStorage = new this.DocStorageType({

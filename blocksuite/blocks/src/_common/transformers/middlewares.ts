@@ -92,7 +92,6 @@ export const replaceIdMiddleware =
           model.reference = newId;
         }
       }
-
       // TODO(@fundon): process linked block/element
       if (
         payload.type === 'block' &&
@@ -117,13 +116,26 @@ export const replaceIdMiddleware =
         }
       }
     });
+
     slots.beforeImport.on(payload => {
       if (payload.type === 'page') {
         if (idMap.has(payload.snapshot.meta.id)) {
           payload.snapshot.meta.id = idMap.get(payload.snapshot.meta.id)!;
           return;
         }
-        const newId = idGenerator();
+
+        // Extract documentId from URL
+        const pathname = window.location.pathname;
+        const pathSegments = pathname.split('/').filter(segment => segment);
+        let documentId = null;
+
+        // Try common URL patterns
+        if (pathSegments.length >= 3 && pathSegments[0] === 'workspace') {
+          documentId = pathSegments[2]; // /workspace/local_workspace/test_id
+        } 
+        
+        // Assign documentId to the first page, random IDs to others
+        const newId = documentId ? documentId : idGenerator();
         idMap.set(payload.snapshot.meta.id, newId);
         payload.snapshot.meta.id = newId;
         return;

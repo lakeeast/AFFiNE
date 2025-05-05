@@ -8,6 +8,7 @@ import { DocPropertySidebar } from '@affine/core/components/doc-properties/sideb
 import { useAppSettingHelper } from '@affine/core/components/hooks/affine/use-app-setting-helper';
 import { useDocMetaHelper } from '@affine/core/components/hooks/use-block-suite-page-meta';
 import { DocService } from '@affine/core/modules/doc';
+import { DocsService } from '@affine/core/modules/doc';
 import { EditorService } from '@affine/core/modules/editor';
 import { FeatureFlagService } from '@affine/core/modules/feature-flag';
 import { GlobalContextService } from '@affine/core/modules/global-context';
@@ -16,8 +17,10 @@ import { RecentDocsService } from '@affine/core/modules/quicksearch';
 import { ViewService } from '@affine/core/modules/workbench';
 import { WorkspaceService } from '@affine/core/modules/workspace';
 import { isNewTabTrigger } from '@affine/core/utils';
+import onboardingUrl from '@affine/templates/onboarding.zip';
 import track from '@affine/track';
 import { RefNodeSlotsProvider } from '@blocksuite/affine/blocks';
+import { ZipTransformer } from '@blocksuite/affine/blocks';
 import {
   type Disposable,
   DisposableGroup,
@@ -38,7 +41,7 @@ import {
 } from '@toeverything/infra';
 import clsx from 'clsx';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate,useParams } from 'react-router-dom';
 
 import { AffineErrorBoundary } from '../../../../components/affine/affine-error-boundary';
 import { GlobalPageHistoryModal } from '../../../../components/affine/page-history-modal';
@@ -47,7 +50,6 @@ import { useActiveBlocksuiteEditor } from '../../../../components/hooks/use-bloc
 import { usePageDocumentTitle } from '../../../../components/hooks/use-global-state';
 import { PageDetailEditor } from '../../../../components/page-detail-editor';
 import { TrashPageFooter } from '../../../../components/pure/trash-page-footer';
-import { TopTip } from '../../../../components/top-tip';
 import {
   useIsActiveView,
   ViewBody,
@@ -63,6 +65,93 @@ import { EditorChatPanel } from './tabs/chat';
 import { EditorFramePanel } from './tabs/frame';
 import { EditorJournalPanel } from './tabs/journal';
 import { EditorOutlinePanel } from './tabs/outline';
+
+// Hook to import onboarding document if pageId doesn't exist
+const useImportOnboardingDoc = (pageId: string) => {
+  const workspaceService = useService(WorkspaceService);
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
+  const [resolvedPageId, setResolvedPageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAndImport = async () => {
+      console.log('Checking document for pageId:', pageId);
+      const workspace = workspaceService.workspace;
+      if (!workspace) {
+        console.error('No workspace available');
+        setStatus('error');
+        return;
+      }
+      const docCollection = workspace.docCollection;
+
+      // Check if document exists
+      const docExists = docCollection.getDoc(pageId);
+      console.log('Document exists:', !!docExists, 'pageId:', pageId);
+      if (docExists) {
+        setStatus('success');
+        setResolvedPageId(pageId);
+        return;
+      }
+
+      setStatus('loading');
+      console.log('Document not found, importing onboarding template with pageId:', pageId);
+
+      try {
+        console.log('Fetching onboarding URL:', onboardingUrl);
+        const blob = await (await fetch(onboardingUrl)).blob();
+        console.log('Onboarding ZIP fetched, importing with pageId:', pageId);
+        await ZipTransformer.importDocs(docCollection, blob);
+        console.log('Onboarding template imported');
+
+        // Wait for doc readiness
+        await workspace.engine.doc.waitForDocReady(workspace.id);
+        console.log('Workspace docs ready');
+
+        // Find the imported document
+        const docsService = workspace.scope.get(DocsService);
+        const docs = docsService.list.docs$.value;
+        console.log('Available documents:', docs.map(doc => ({ id: doc.id, title: doc.title$.value })));
+        const importedDoc = docs.find(p => p.id === pageId);
+
+        if (importedDoc) {
+          console.log('Imported document found:', importedDoc.id, 'Title:', importedDoc.title$.value);
+          // Log document blocks to inspect structure
+          console.log('Document blocks:', importedDoc.blockSuiteDoc.blocks.map(block => block.flavour));
+          // Set to page mode for new IDs
+          importedDoc.setPrimaryMode('page');
+          setResolvedPageId(importedDoc.id);
+          setStatus('success');
+        } else {
+          console.error('Imported document not found for pageId:', pageId);
+          // Fallback to first document if multiple are imported
+          const fallbackDoc = docs[0];
+          if (fallbackDoc) {
+            console.log('Falling back to first document:', fallbackDoc.id, 'Title:', fallbackDoc.title$.value);
+            console.log('Fallback document blocks:', fallbackDoc.blockSuiteDoc.blocks.map(block => block.flavour));
+            fallbackDoc.setPrimaryMode('page');
+            setResolvedPageId(fallbackDoc.id);
+            setStatus('success');
+            navigate(`/workspace/local_workspace/${fallbackDoc.id}`, { replace: true });
+          } else {
+            throw new Error('Imported document not found');
+          }
+        }
+      } catch (error) {
+        console.error('Error importing onboarding document:', error);
+        setStatus('error');
+      }
+    };
+
+    if (pageId) {
+      checkAndImport();
+    } else {
+      console.log('Skipping checkAndImport due to missing pageId');
+      setStatus('error');
+    }
+  }, [workspaceService, pageId, navigate]);
+
+  return { status, resolvedPageId };
+};
 
 const DetailPageImpl = memo(function DetailPageImpl() {
   const {
@@ -374,25 +463,48 @@ const DetailPageImpl = memo(function DetailPageImpl() {
 export const Component = () => {
   const params = useParams();
   const recentPages = useService(RecentDocsService);
-
-  useEffect(() => {
-    if (params.pageId) {
-      const pageId = params.pageId;
-      localStorage.setItem('last_page_id', pageId);
-
-      recentPages.addRecentDoc(pageId);
-    }
-  }, [params, recentPages]);
+  const navigate = useNavigate();
 
   const pageId = params.pageId;
+  const { status, resolvedPageId } = useImportOnboardingDoc(pageId || '');
 
-  return pageId ? (
+  useEffect(() => {
+    if (pageId) {
+      localStorage.setItem('last_page_id', pageId);
+      recentPages.addRecentDoc(pageId);
+    }
+  }, [pageId, recentPages]);
+
+  // Handle navigation for non-existent document
+  useEffect(() => {
+    if (status === 'success' && resolvedPageId && resolvedPageId !== pageId) {
+      console.log('Navigating to resolved pageId:', resolvedPageId);
+      navigate(`/workspace/local_workspace/${resolvedPageId}`, { replace: true });
+    } else if (status === 'error') {
+      console.log('Document error for pageId:', pageId, 'showing PageNotFound');
+    }
+  }, [status, resolvedPageId, pageId, navigate]);
+
+  if (!pageId) {
+    console.log('Missing pageId:', pageId);
+    return null;
+  }
+
+  if (status === 'loading') {
+    console.log('Loading onboarding template for pageId:', pageId);
+    return <PageDetailSkeleton />;
+  }
+
+  const finalPageId = resolvedPageId || pageId;
+  console.log('Rendering DetailPageWrapper with finalPageId:', finalPageId);
+
+  return (
     <DetailPageWrapper
-      pageId={pageId}
+      pageId={finalPageId}
       skeleton={<PageDetailSkeleton />}
       notFound={<PageNotFound noPermission />}
     >
       <DetailPageImpl />
     </DetailPageWrapper>
-  ) : null;
+  );
 };
