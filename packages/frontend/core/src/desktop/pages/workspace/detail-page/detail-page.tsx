@@ -386,7 +386,22 @@ const DetailPageImpl = memo(function DetailPageImpl() {
           data-dynamic-top-border={BUILD_CONFIG.isElectron}
           data-has-scroll-top={hasScrollTop}
         >
-          {/* Add a key to force rerender when page changed, to avoid error boundary persisting. */}
+          {/* Floating save button */}
+          <button
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              zIndex: 1000,
+              padding: '8px 16px',
+              background: '#fff',
+              border: '1px solid #ccc',
+              cursor: 'pointer',
+            }}
+            onClick={() => console.log('Save button clicked')}
+          >
+            Save
+          </button>
           <AffineErrorBoundary key={doc.id}>
             <Scrollable.Root>
               <Scrollable.Viewport

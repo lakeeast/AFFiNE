@@ -81,6 +81,7 @@ interface PageHeaderProps {
   page: Store;
   workspace: Workspace;
 }
+
 export function JournalPageHeader({ page, workspace }: PageHeaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -168,13 +169,13 @@ export function NormalPageHeader({ page, workspace }: PageHeaderProps) {
           <>
             <FavoriteButton pageId={page?.id} />
             <InfoButton docId={page.id} />
+            <PageHeaderMenuButton
+              rename={onRename}
+              page={page}
+              containerWidth={containerWidth}
+            />
           </>
         )}
-        <PageHeaderMenuButton
-          rename={onRename}
-          page={page}
-          containerWidth={containerWidth}
-        />
       </div>
 
       <div className={styles.spacer} />
@@ -236,9 +237,9 @@ export function DetailPageHeader(
 
   const inner =
     isJournal && !isInTrash ? (
-      <JournalPageHeader {...props} />
+      <JournalPageHeader page={page} workspace={workspace} />
     ) : (
-      <NormalPageHeader {...props} />
+      <NormalPageHeader page={page} workspace={workspace} />
     );
 
   useEffect(() => {
