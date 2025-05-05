@@ -353,6 +353,18 @@ const DetailPageImpl = memo(function DetailPageImpl() {
     [editor, workbench, peekView, doc.id]
   );
 
+  // Listen for "save" message from parent window
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'save') {
+        console.log('Received save message:', event.data.saveCredentials);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const [hasScrollTop, setHasScrollTop] = useState(false);
 
   const openOutlinePanel = useCallback(() => {
@@ -398,7 +410,12 @@ const DetailPageImpl = memo(function DetailPageImpl() {
               border: '1px solid #ccc',
               cursor: 'pointer',
             }}
-            onClick={() => console.log('Save button clicked')}
+            onClick={() => {
+              window.parent.postMessage({
+                type: 'request-save',
+                documentType: 'doc',
+              }, '*');
+            }}
           >
             Save
           </button>
@@ -434,7 +451,7 @@ const DetailPageImpl = memo(function DetailPageImpl() {
 
       {enableAI && (
         <ViewSidebarTab
-          tabId="chat"
+          tabId="chart"
           icon={<AiIcon />}
           unmountOnInactive={false}
         >
