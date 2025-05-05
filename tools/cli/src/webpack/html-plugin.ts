@@ -15,13 +15,6 @@ export const getPublicPath = (
   BUILD_CONFIG: BUILD_CONFIG_TYPE
 ) => {
   const { BUILD_TYPE } = process.env;
-  console.log('getPublicPath:', {
-    PUBLIC_PATH: process.env.PUBLIC_PATH,
-    BUILD_TYPE,
-    mode: flags.mode,
-    distribution: BUILD_CONFIG.distribution
-  });
-
   if (typeof process.env.PUBLIC_PATH === 'string') {
     return process.env.PUBLIC_PATH;
   }
@@ -37,11 +30,11 @@ export const getPublicPath = (
 
   switch (BUILD_TYPE) {
     case 'stable':
-      return './';
+      return 'https://prod.affineassets.com/';
     case 'beta':
-      return './';
+      return 'https://beta.affineassets.com/';
     default:
-      return './';
+      return 'https://dev.affineassets.com/';
   }
 };
 
@@ -70,12 +63,9 @@ function getHTMLPluginOptions(
   BUILD_CONFIG: BUILD_CONFIG_TYPE
 ) {
   const publicPath = getPublicPath(flags, BUILD_CONFIG);
-  const isRelativePath = publicPath === './' || publicPath === '../' || publicPath.startsWith('./') || publicPath.startsWith('../');
-  const cdnOrigin = publicPath.startsWith('/') || isRelativePath
+  const cdnOrigin = publicPath.startsWith('/')
     ? undefined
     : new URL(publicPath).origin;
-
-  console.log('getHTMLPluginOptions:', { publicPath, cdnOrigin });
 
   const templateParams = {
     GIT_SHORT_SHA: gitShortHash(),
