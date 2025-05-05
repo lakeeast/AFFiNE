@@ -344,9 +344,7 @@ const WorkspacePage = ({ meta }: { meta: WorkspaceMetadata }) => {
       <DNDContextProvider>
         <OpenInAppGuard>
           <AffineErrorBoundary height="100vh">
-            <WorkspaceLayout>
               <WorkbenchRoot />
-            </WorkspaceLayout>
           </AffineErrorBoundary>
         </OpenInAppGuard>
       </DNDContextProvider>

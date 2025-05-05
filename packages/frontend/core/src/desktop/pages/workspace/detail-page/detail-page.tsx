@@ -41,7 +41,7 @@ import {
 } from '@toeverything/infra';
 import clsx from 'clsx';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate,useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { AffineErrorBoundary } from '../../../../components/affine/affine-error-boundary';
 import { GlobalPageHistoryModal } from '../../../../components/affine/page-history-modal';
@@ -336,12 +336,21 @@ const DetailPageImpl = memo(function DetailPageImpl() {
         scrollViewportRef.current
       );
 
+      // Post message to parent window to indicate document is loaded
+      window.parent.postMessage(
+        {
+          type: 'url-changed',
+          payload: doc.id
+        },
+        '*'
+      );
+
       return () => {
         unbind();
         disposable.dispose();
       };
     },
-    [editor, workbench, peekView]
+    [editor, workbench, peekView, doc.id]
   );
 
   const [hasScrollTop, setHasScrollTop] = useState(false);

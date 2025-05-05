@@ -36,8 +36,17 @@ export const AllPage = () => {
 
   const isActiveView = useIsActiveView();
 
+  // Send postMessage when the All Pages view is active
   useEffect(() => {
     if (isActiveView) {
+      window.parent.postMessage(
+        {
+          type: 'url-changed',
+          payload: 'all',
+        },
+        '*' // Use '*' for simplicity; replace with Angular app's origin in production
+      );
+
       globalContext.isAllDocs.set(true);
 
       return () => {
