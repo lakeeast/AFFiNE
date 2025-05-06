@@ -92,3 +92,8 @@ export const saveButton = style({
     background: cssVarV2('layer/background/hoverOverlay'),
   },
 });
+
+export const saveButtonLoading = style({
+  opacity: 0.6,
+  pointerEvents: 'none',
+});

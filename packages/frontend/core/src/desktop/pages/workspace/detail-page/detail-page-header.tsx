@@ -21,14 +21,15 @@ import { DocDisplayMetaService } from '@affine/core/modules/doc-display-meta';
 import { EditorService } from '@affine/core/modules/editor';
 import { JournalService } from '@affine/core/modules/journal';
 import { TemplateDocService } from '@affine/core/modules/template-doc';
+import { WorkspaceService } from '@affine/core/modules/workspace';
 import { ViewIcon, ViewTitle } from '@affine/core/modules/workbench';
 import type { Workspace } from '@affine/core/modules/workspace';
-import { WorkspaceService } from '@affine/core/modules/workspace';
 import type { AffineDNDData } from '@affine/core/types/dnd';
 import { useI18n } from '@affine/i18n';
 import { track } from '@affine/track';
+import type { Store } from '@blocksuite/affine/store';
 import { ZipTransformer } from '@blocksuite/affine/blocks';
-import type { DocSnapshot, Store } from '@blocksuite/affine/store';
+import type { DocSnapshot } from '@blocksuite/affine/store';
 import { replaceIdMiddleware, titleMiddleware } from '@blocksuite/blocks';
 import { getAssetName, Transformer } from '@blocksuite/store';
 import { useLiveData, useService } from '@toeverything/infra';
@@ -42,11 +43,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import { StorageManager } from './storage-manager'; // Adjust path as needed
+import { useDetailPageHeaderResponsive } from './use-header-responsive';
 
 import { Zip } from '../../../../../../../../blocksuite/blocks/src/_common/transformers/utils';
 import * as styles from './detail-page-header.css.ts';
-import { StorageManager } from './storage-manager'; // Adjust path as needed
-import { useDetailPageHeaderResponsive } from './use-header-responsive';
 
 const Header = forwardRef<
   HTMLDivElement,
@@ -87,9 +88,10 @@ interface PageHeaderProps {
   page: Store;
   workspace: Workspace;
   onSave: () => Promise<void>;
+  isSaving: boolean;
 }
 
-export function JournalPageHeader({ page, workspace, onSave }: PageHeaderProps) {
+export function JournalPageHeader({ page, workspace, onSave, isSaving }: PageHeaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -120,14 +122,18 @@ export function JournalPageHeader({ page, workspace, onSave }: PageHeaderProps) 
       <HeaderDivider />
       <PageHeaderMenuButton isJournal page={page} containerWidth={containerWidth} />
       {page && !hideShare ? <SharePageButton workspace={workspace} page={page} /> : null}
-      <button className={styles.saveButton} onClick={onSave}>
-        Save
+      <button
+        className={clsx(styles.saveButton, { [styles.saveButtonLoading]: isSaving })}
+        onClick={onSave}
+        disabled={isSaving}
+      >
+        {isSaving ? 'Saving...' : 'Save'}
       </button>
     </Header>
   );
 }
 
-export function NormalPageHeader({ page, workspace, onSave }: PageHeaderProps) {
+export function NormalPageHeader({ page, workspace, onSave, isSaving }: PageHeaderProps) {
   const titleInputHandleRef = useRef<InlineEditHandle>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -183,8 +189,12 @@ export function NormalPageHeader({ page, workspace, onSave }: PageHeaderProps) {
       {showDivider ? (
         <Divider orientation="vertical" style={{ height: 20, marginLeft: 4 }} />
       ) : null}
-      <button className={styles.saveButton} onClick={onSave}>
-        Save
+      <button
+        className={clsx(styles.saveButton, { [styles.saveButtonLoading]: isSaving })}
+        onClick={onSave}
+        disabled={isSaving}
+      >
+        {isSaving ? 'Saving...' : 'Save'}
       </button>
     </Header>
   );
@@ -205,8 +215,11 @@ export function DetailPageHeader(
     docId: page.id,
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = useCallback(async (workspace: Workspace, page: Store) => {
     console.log('Initiating save operation for page:', page.id);
+    setIsSaving(true);
 
     try {
       // Set up listener for save message first
@@ -240,8 +253,6 @@ export function DetailPageHeader(
       const saveCredentials = await savePromise;
 
       // Create snapshot using original logic
-      /////////////////////////////////
-      // Save logic
       const workspaceImpl = page.workspace;
       const docs = [page];
       const zip = new Zip();
@@ -259,7 +270,7 @@ export function DetailPageHeader(
         ],
       });
       const snapshots = await Promise.all(docs.map(job.docToSnapshot));
-    
+
       await Promise.all(
         snapshots
           .filter((snapshot): snapshot is DocSnapshot => !!snapshot)
@@ -268,11 +279,11 @@ export function DetailPageHeader(
             await zip.file(snapshotName, JSON.stringify(snapshot, null, 2));
           })
       );
-    
+
       const assets = zip.folder('assets');
       const pathBlobIdMap = job.assetsManager.getPathBlobIdMap();
       const assetsMap = job.assets;
-    
+
       await Promise.all(
         Array.from(pathBlobIdMap.values()).map(async blobId => {
           await job.assetsManager.readFromBlob(blobId);
@@ -283,9 +294,8 @@ export function DetailPageHeader(
           }
         })
       );
-    
+
       const snapshotBlob = await zip.generate();
-    
 
       // Initialize StorageManager and upload
       const storage = StorageManager.CreateStorage(saveCredentials.storageType);
@@ -296,6 +306,8 @@ export function DetailPageHeader(
       console.log('Snapshot saved to cloud storage:', snapshotName);
     } catch (error) {
       console.error('Error saving snapshot:', error);
+    } finally {
+      setIsSaving(false);
     }
   }, []);
 
@@ -334,9 +346,9 @@ export function DetailPageHeader(
   }, [dragging, onDragging]);
 
   const inner = isJournal && !isInTrash ? (
-    <JournalPageHeader page={page} workspace={workspace} onSave={onSave} />
+    <JournalPageHeader page={page} workspace={workspace} onSave={onSave} isSaving={isSaving} />
   ) : (
-    <NormalPageHeader page={page} workspace={workspace} onSave={onSave} />
+    <NormalPageHeader page={page} workspace={workspace} onSave={onSave} isSaving={isSaving} />
   );
 
   return (
