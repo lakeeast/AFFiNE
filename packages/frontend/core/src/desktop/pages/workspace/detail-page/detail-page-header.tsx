@@ -45,7 +45,6 @@ import {
 } from 'react';
 import { StorageManager } from './storage-manager'; // Adjust path as needed
 import { useDetailPageHeaderResponsive } from './use-header-responsive';
-
 import { Zip } from '../../../../../../../../blocksuite/blocks/src/_common/transformers/utils';
 import * as styles from './detail-page-header.css.ts';
 
@@ -88,10 +87,10 @@ interface PageHeaderProps {
   page: Store;
   workspace: Workspace;
   onSave: () => Promise<void>;
-  isSaving: boolean;
+  isLoading: boolean;
 }
 
-export function JournalPageHeader({ page, workspace, onSave, isSaving }: PageHeaderProps) {
+export function JournalPageHeader({ page, workspace, onSave, isLoading }: PageHeaderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -123,17 +122,17 @@ export function JournalPageHeader({ page, workspace, onSave, isSaving }: PageHea
       <PageHeaderMenuButton isJournal page={page} containerWidth={containerWidth} />
       {page && !hideShare ? <SharePageButton workspace={workspace} page={page} /> : null}
       <button
-        className={clsx(styles.saveButton, { [styles.saveButtonLoading]: isSaving })}
+        className={clsx(styles.saveButton, { [styles.saveButtonLoading]: isLoading })}
         onClick={onSave}
-        disabled={isSaving}
+        disabled={isLoading}
       >
-        {isSaving ? 'Saving...' : 'Save'}
+        {isLoading ? 'Loading...' : 'Save'}
       </button>
     </Header>
   );
 }
 
-export function NormalPageHeader({ page, workspace, onSave, isSaving }: PageHeaderProps) {
+export function NormalPageHeader({ page, workspace, onSave, isLoading }: PageHeaderProps) {
   const titleInputHandleRef = useRef<InlineEditHandle>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -190,11 +189,11 @@ export function NormalPageHeader({ page, workspace, onSave, isSaving }: PageHead
         <Divider orientation="vertical" style={{ height: 20, marginLeft: 4 }} />
       ) : null}
       <button
-        className={clsx(styles.saveButton, { [styles.saveButtonLoading]: isSaving })}
+        className={clsx(styles.saveButton, { [styles.saveButtonLoading]: isLoading })}
         onClick={onSave}
-        disabled={isSaving}
+        disabled={isLoading}
       >
-        {isSaving ? 'Saving...' : 'Save'}
+        {isLoading ? 'Loading...' : 'Save'}
       </button>
     </Header>
   );
@@ -209,17 +208,93 @@ export function DetailPageHeader(
   const journalService = useService(JournalService);
   const isJournal = !!useLiveData(journalService.journalDate$(page.id));
   const isInTrash = page.meta?.trash;
+  const [isLoading, setIsLoading] = useState(false);
 
   useRegisterCopyLinkCommands({
     workspaceMeta: workspace.meta,
     docId: page.id,
   });
 
-  const [isSaving, setIsSaving] = useState(false);
+  // Check if document exists and handle loading if missing
+  useEffect(() => {
+    const docExists = workspace.docCollection.getDoc(page.id);
+    if (docExists) {
+      console.log('Document exists in IndexedDB:', page.id);
+      return;
+    }
+
+    console.log('Document not found in IndexedDB, initiating load for page:', page.id);
+    setIsLoading(true);
+
+    // Set up listener for load message
+    const loadPromise = new Promise<any>((resolve, reject) => {
+      const handler = (event: MessageEvent) => {
+        if (event.data.type === 'load' && event.data.credential) {
+          console.log('Received load message with credentials:', event.data.credential);
+          resolve(event.data.credential);
+          window.removeEventListener('message', handler);
+        }
+      };
+      window.addEventListener('message', handler);
+      // Timeout to prevent hanging
+      setTimeout(() => {
+        window.removeEventListener('message', handler);
+        reject(new Error('Timeout waiting for load credentials'));
+      }, 10000); // 10 seconds
+    });
+
+    // Send created message
+    window.parent.postMessage(
+      {
+        type: 'created',
+        documentId: page.id,
+      },
+      '*'
+    );
+    console.log('Sent created message for document:', page.id);
+
+    // Handle load and import
+    loadPromise
+      .then(async credential => {
+        try {
+          // Initialize StorageManager
+          const storage = StorageManager.CreateStorage(credential.storageType);
+          storage.initialize(credential);
+
+          // Download affine.zip using getFileUrl
+          const fileFullPath = `affine.zip`;
+          const fileUrl = storage.getFileUrl(fileFullPath);
+          if (!fileUrl) {
+            console.error('Failed to get file URL for affine.zip');
+            return;
+          }
+
+          const response = await fetch(fileUrl);
+          if (!response.ok) {
+            console.error('Failed to fetch affine.zip:', response.statusText);
+            return;
+          }
+          const snapshotBlob = await response.blob();
+
+          // Import document into workspace
+          await ZipTransformer.importDocs(workspace.docCollection, snapshotBlob);
+          console.log('Document imported successfully:', page.id);
+        } catch (error) {
+          console.error('Error importing document:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      })
+      .catch(error => {
+        console.error('Error loading document:', error);
+        setIsLoading(false);
+      });
+
+  }, [page.id, workspace]);
 
   const handleSave = useCallback(async (workspace: Workspace, page: Store) => {
     console.log('Initiating save operation for page:', page.id);
-    setIsSaving(true);
+    setIsLoading(true);
 
     try {
       // Set up listener for save message first
@@ -307,7 +382,7 @@ export function DetailPageHeader(
     } catch (error) {
       console.error('Error saving snapshot:', error);
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   }, []);
 
@@ -346,9 +421,9 @@ export function DetailPageHeader(
   }, [dragging, onDragging]);
 
   const inner = isJournal && !isInTrash ? (
-    <JournalPageHeader page={page} workspace={workspace} onSave={onSave} isSaving={isSaving} />
+    <JournalPageHeader page={page} workspace={workspace} onSave={onSave} isLoading={isLoading} />
   ) : (
-    <NormalPageHeader page={page} workspace={workspace} onSave={onSave} isSaving={isSaving} />
+    <NormalPageHeader page={page} workspace={workspace} onSave={onSave} isLoading={isLoading} />
   );
 
   return (

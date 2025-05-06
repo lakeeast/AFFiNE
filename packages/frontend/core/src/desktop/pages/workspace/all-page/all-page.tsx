@@ -10,6 +10,7 @@ import type { Filter } from '@affine/env/filter';
 import { useI18n } from '@affine/i18n';
 import { useService } from '@toeverything/infra';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import {
   useIsActiveView,
@@ -28,35 +29,33 @@ export const AllPage = () => {
   const globalContext = useService(GlobalContextService).globalContext;
   const pageMetas = useBlockSuiteDocMeta(currentWorkspace.docCollection);
   const [hideHeaderCreateNew, setHideHeaderCreateNew] = useState(true);
-
   const [filters, setFilters] = useState<Filter[]>([]);
-  const filteredPageMetas = useFilteredPageMetas(pageMetas, {
-    filters: filters,
-  });
-
+  const filteredPageMetas = useFilteredPageMetas(pageMetas, { filters });
   const isActiveView = useIsActiveView();
+  const location = useLocation();
+  const t = useI18n();
 
-  // Send postMessage when the All Pages view is active
+  // Debugging: Log when component mounts
+  console.log('AllPage component rendering, isActiveView:', isActiveView, 'location:', location.pathname);
+
+  // Post url-changed message on mount and URL change
   useEffect(() => {
+    console.log('AllPage useEffect running, isActiveView:', isActiveView, 'posting url-changed message');
+    window.parent.postMessage(
+      {
+        type: 'url-changed',
+        payload: 'all',
+      },
+      '*' // Replace with Angular app's origin in production (e.g., 'http://parent-origin.com')
+    );
+
     if (isActiveView) {
-      window.parent.postMessage(
-        {
-          type: 'url-changed',
-          payload: 'all',
-        },
-        '*' // Use '*' for simplicity; replace with Angular app's origin in production
-      );
-
       globalContext.isAllDocs.set(true);
-
       return () => {
         globalContext.isAllDocs.set(false);
       };
     }
-    return;
-  }, [globalContext, isActiveView]);
-
-  const t = useI18n();
+  }, [globalContext, isActiveView, location.pathname]);
 
   return (
     <>
