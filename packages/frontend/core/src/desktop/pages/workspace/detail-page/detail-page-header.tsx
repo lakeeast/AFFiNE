@@ -21,16 +21,16 @@ import { DocDisplayMetaService } from '@affine/core/modules/doc-display-meta';
 import { EditorService } from '@affine/core/modules/editor';
 import { JournalService } from '@affine/core/modules/journal';
 import { TemplateDocService } from '@affine/core/modules/template-doc';
+import { WorkspaceService } from '@affine/core/modules/workspace';
 import { ViewIcon, ViewTitle } from '@affine/core/modules/workbench';
 import type { Workspace } from '@affine/core/modules/workspace';
-import { WorkspaceService } from '@affine/core/modules/workspace';
 import type { AffineDNDData } from '@affine/core/types/dnd';
 import { useI18n } from '@affine/i18n';
 import { track } from '@affine/track';
-import { ZipTransformer } from '@blocksuite/affine/blocks';
 import type { Store } from '@blocksuite/affine/store';
-import { replaceIdMiddleware, titleMiddleware } from '@blocksuite/blocks';
+import { ZipTransformer } from '@blocksuite/affine/blocks';
 import { Transformer } from '@blocksuite/store';
+import { replaceIdMiddleware, titleMiddleware } from '@blocksuite/blocks';
 import { useLiveData, useService } from '@toeverything/infra';
 import clsx from 'clsx';
 import {
@@ -42,10 +42,10 @@ import {
   useRef,
   useState,
 } from 'react';
-
-import * as styles from './detail-page-header.css.ts';
 import { StorageManager } from './storage-manager'; // Adjust path as needed
 import { useDetailPageHeaderResponsive } from './use-header-responsive';
+
+import * as styles from './detail-page-header.css.ts';
 
 const Header = forwardRef<
   HTMLDivElement,
@@ -204,9 +204,13 @@ export function DetailPageHeader(
     docId: page.id,
   });
 
-  const handleSave = useCallback(async () => {
-    // Empty implementation as requested, to be filled later
+  const handleSave = useCallback(async (workspace: Workspace, page: Store) => {
+    const workspaceImpl = page.workspace;
+    var docs = [page];
+    await ZipTransformer.exportDocs(workspaceImpl, docs);
   }, []);
+
+  const onSave = useCallback(() => handleSave(workspace, page), [handleSave, workspace, page]);
 
   const { dragRef, dragging, CustomDragPreview } = useDraggable<AffineDNDData>(
     () => {
@@ -241,9 +245,9 @@ export function DetailPageHeader(
   }, [dragging, onDragging]);
 
   const inner = isJournal && !isInTrash ? (
-    <JournalPageHeader page={page} workspace={workspace} onSave={handleSave} />
+    <JournalPageHeader page={page} workspace={workspace} onSave={onSave} />
   ) : (
-    <NormalPageHeader page={page} workspace={workspace} onSave={handleSave} />
+    <NormalPageHeader page={page} workspace={workspace} onSave={onSave} />
   );
 
   return (
