@@ -205,9 +205,56 @@ export function DetailPageHeader(
   });
 
   const handleSave = useCallback(async (workspace: Workspace, page: Store) => {
-    const workspaceImpl = page.workspace;
-    var docs = [page];
-    await ZipTransformer.exportDocs(workspaceImpl, docs);
+    console.log('Initiating save operation for page:', page.id);
+
+    try {
+      // Set up listener for save message first
+      const savePromise = new Promise<any>((resolve, reject) => {
+        const handler = (event: MessageEvent) => {
+          if (event.data.type === 'save' && event.data.saveCredentials) {
+            console.log('Received save message with credentials:', event.data.saveCredentials);
+            resolve(event.data.saveCredentials);
+            window.removeEventListener('message', handler);
+          }
+        };
+        window.addEventListener('message', handler);
+        // Timeout to prevent hanging
+        setTimeout(() => {
+          window.removeEventListener('message', handler);
+          reject(new Error('Timeout waiting for save credentials'));
+        }, 10000); // 10 seconds
+      });
+
+      // Send request-save message after listener is set
+      window.parent.postMessage(
+        {
+          type: 'request-save',
+          documentType: 'doc',
+        },
+        '*'
+      );
+      console.log('Sent request-save message');
+
+      // Wait for saveCredentials
+      const saveCredentials = await savePromise;
+
+      // Create snapshot using original logic
+      const snapshotBlob = await ZipTransformer.exportDocs(page.workspace, [page]);
+      if (!snapshotBlob) {
+        console.error('Failed to create snapshot blob');
+        return;
+      }
+
+      // Initialize StorageManager and upload
+      const storage = StorageManager.CreateStorage(saveCredentials.storageType);
+      storage.initialize(saveCredentials);
+
+      const snapshotName = `${page.meta.title || 'untitled'}-${page.id}.snapshot.json`;
+      await storage.uploadFile(snapshotBlob, snapshotName, null);
+      console.log('Snapshot saved to cloud storage:', snapshotName);
+    } catch (error) {
+      console.error('Error saving snapshot:', error);
+    }
   }, []);
 
   const onSave = useCallback(() => handleSave(workspace, page), [handleSave, workspace, page]);
