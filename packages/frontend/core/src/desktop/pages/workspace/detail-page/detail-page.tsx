@@ -26,7 +26,6 @@ import {
   DisposableGroup,
 } from '@blocksuite/affine/global/utils';
 import { type AffineEditorContainer } from '@blocksuite/affine/presets';
-import { replaceIdMiddleware, titleMiddleware } from '@blocksuite/blocks';
 import {
   AiIcon,
   FrameIcon,
@@ -34,7 +33,6 @@ import {
   TocIcon,
   TodayIcon,
 } from '@blocksuite/icons/rc';
-import { Transformer } from '@blocksuite/store';
 import {
   FrameworkScope,
   useLiveData,
@@ -63,7 +61,6 @@ import { PageNotFound } from '../../404';
 import * as styles from './detail-page.css';
 import { DetailPageHeader } from './detail-page-header';
 import { DetailPageWrapper } from './detail-page-wrapper';
-import { StorageManager } from './storage-manager'; // Added for cloud storage
 import { EditorChatPanel } from './tabs/chat';
 import { EditorFramePanel } from './tabs/frame';
 import { EditorJournalPanel } from './tabs/journal';
@@ -356,79 +353,6 @@ const DetailPageImpl = memo(function DetailPageImpl() {
     [editor, workbench, peekView, doc.id]
   );
 
-  // Listen for "save" message from parent window
-  useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      if (event.data.type === 'save') {
-        console.log('Received save message:', event.data.saveCredentials);
-        const saveCredentials = event.data.saveCredentials;
-        // Save start
-        // Create snapshot using Transformer
-        const transformer = new Transformer({
-          schema: workspace.schema,
-          blobCRUD: workspace.blobSync,
-          docCRUD: {
-            create: (id: string) => workspace.createDoc({ id }),
-            get: (id: string) => workspace.getDoc(id),
-            delete: (id: string) => workspace.removeDoc(id),
-          },
-          middlewares: [
-            replaceIdMiddleware(workspace.idGenerator),
-            titleMiddleware(workspace.meta.docMetas),
-          ],
-        });
-    
-        try {
-          // Get the current document
-          const currentDoc = doc.blockSuiteDoc;
-          if (!currentDoc) {
-            console.error('No document found for ID:', doc.id);
-            return;
-          }
-    
-          // Create snapshot
-          // Ceate a blob
-          ///////////////////////
-          ///////////////////////
-          const snapshotBlob = await ZipTransformer.exportDocs(workspace, [currentDoc]);
-        if (!snapshotBlob) {
-          console.error('Failed to create snapshot blob');
-          return;
-        }
-/*
-          const snapshot = await transformer.docToSnapshot(currentDoc);
-          if (!snapshot) {
-            console.error('Failed to create snapshot');
-            return;
-          }
-    
-          // Convert snapshot to JSON blob
-          const snapshotJson = JSON.stringify(snapshot, null, 2);
-          const snapshotBlob = new Blob([snapshotJson], { type: 'application/json' });
-    */
-          // Initialize StorageManager
-          if (!saveCredentials || !saveCredentials.storageType) {
-            console.warn('No valid saveCredentials available, cannot save to cloud');
-            return;
-          }
-    
-          const storage = StorageManager.CreateStorage(saveCredentials.storageType);
-          storage.initialize(saveCredentials);
-    
-          // Upload snapshot to cloud storage
-          const snapshotName = `${currentDoc.meta.title || 'untitled'}-${doc.id}.snapshot.json`;
-          await storage.uploadFile(snapshotBlob, snapshotName, null);
-          console.log('Snapshot saved to cloud storage:', snapshotName);
-        } catch (error) {
-          console.error('Error saving snapshot to cloud:', error);
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
   const [hasScrollTop, setHasScrollTop] = useState(false);
 
   const openOutlinePanel = useCallback(() => {
@@ -462,27 +386,6 @@ const DetailPageImpl = memo(function DetailPageImpl() {
           data-dynamic-top-border={BUILD_CONFIG.isElectron}
           data-has-scroll-top={hasScrollTop}
         >
-          {/* Floating save button */}
-          <button
-            style={{
-              position: 'absolute',
-              top: '10px',
-              right: '10px',
-              zIndex: 1000,
-              padding: '8px 16px',
-              background: '#fff',
-              border: '1px solid #ccc',
-              cursor: 'pointer',
-            }}
-            onClick={() => {
-              window.parent.postMessage({
-                type: 'request-save',
-                documentType: 'doc',
-              }, '*');
-            }}
-          >
-            Save
-          </button>
           <AffineErrorBoundary key={doc.id}>
             <Scrollable.Root>
               <Scrollable.Viewport
@@ -557,7 +460,7 @@ const DetailPageImpl = memo(function DetailPageImpl() {
           </Scrollable.Viewport>
           <Scrollable.Scrollbar />
         </Scrollable.Root>
-      </ViewSidebarTab>
+        </ViewSidebarTab>
 
       <GlobalPageHistoryModal />
       <PageAIOnboarding />

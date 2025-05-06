@@ -16,10 +16,12 @@ export const header = style({
   containerName: 'detail-page-header',
   containerType: 'inline-size',
 });
+
 export const spacer = style({
   flexGrow: 1,
   minWidth: 12,
 });
+
 export const journalWeekPicker = style({
   minWidth: 100,
   flexGrow: 1,
@@ -74,5 +76,19 @@ export const journalTemplateMark = style({
     '(width <= 400px)': {
       display: 'none',
     },
+  },
+});
+
+export const saveButton = style({
+  padding: '8px 16px',
+  background: cssVarV2('layer/background/primary'),
+  border: `1px solid ${cssVarV2('layer/insideBorder/border')}`,
+  borderRadius: '4px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  marginLeft: '8px',
+  color: cssVarV2('text/primary'),
+  ':hover': {
+    background: cssVarV2('layer/background/hoverOverlay'),
   },
 });
