@@ -341,13 +341,15 @@ const WorkspacePage = ({ meta }: { meta: WorkspaceMetadata }) => {
 
   return (
     <FrameworkScope scope={workspace.scope}>
-      <DNDContextProvider>
-        <OpenInAppGuard>
-          <AffineErrorBoundary height="100vh">
-              <WorkbenchRoot />
-          </AffineErrorBoundary>
-        </OpenInAppGuard>
-      </DNDContextProvider>
-    </FrameworkScope>
+    <DNDContextProvider>
+      <OpenInAppGuard>
+        <AffineErrorBoundary height="100vh">
+          <WorkspaceLayout>
+            <WorkbenchRoot />
+          </WorkspaceLayout>
+        </AffineErrorBoundary>
+      </OpenInAppGuard>
+    </DNDContextProvider>
+  </FrameworkScope>
   );
 };
